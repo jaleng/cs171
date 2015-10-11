@@ -1,0 +1,7 @@
+tet2 tetrahedron2.obj
+
+tet2
+t 2 0 0
+s 2 2 2
+
+
