@@ -48,6 +48,110 @@ parse_camera(std::ifstream file_stream) {
   return std::move(camera_up);
 }
 
+// Parse object data
+//  auto obj_to_data_up = parse_obj_to_data(scene_desc_file_stream);
+unique_ptr<std::map<std::string, ObjectData>>
+make_obj_to_data(const std::map<std::string, std::string>* obj_name_to_filename_p) {
+  using std::map;
+  using std::string;
+  using std::vector;
+  using std::stringstream;
+  using std::ifstream;
+
+  unique_ptr<map<string, ObjectData> obj_name_to_data_up {new map<string, ObjectData>};
+  
+  for (auto it = obj_name_to_file_name_p->begin(); it != obj_name_to_file_name_p->end(); ++it) {
+    string obj_name = it->first;
+    string file_name = it->second;
+    ifstream obj_fileStream{file_name};
+    vector<Vertex> vertices;
+    vector<Face> faces;
+
+    while (!obj_fileStream.eof()) {
+      string line;
+      getline(obj_fileStream, line);
+      stringstream line_stream{line};
+      char shape_token = line_stream.get();
+      if (shape_token == 'v') {
+        float x, y, z;
+        line_stream >> x >> y >> z;
+        vertices.emplace_back(x, y, z);
+      } else if (shape_token == 'f') {
+        int v1, v2, v3;
+        line_stream >> v1 >> v2 >> v3;
+        faces.emplace_back(v1, v2, v3);
+      }
+    }
+    ObjectData obj_data{std::move(vertices), std::move(faces)};
+    obj_name_to_data_up->[obj_name] = obj_data;
+  }
+  return std::move(obj_name_to_data_up);
+}
+
+
+
+// Parse object attributes
+// auto obj_name_to_filename_up = parse_obj_to_filename(scene_desc_file_stream);
+unique_ptr<map<std::string, std::string>>
+parse_obj_to_filename(ifstream file_stream) {
+  using std::string;
+  using std::stringstream;
+  using mapss = map<string,string>;
+
+  unique_ptr<mapss> obj_name_to_filename_up{new mapss};
+  while (!file_stream.eof()) {
+    string line;
+    getline(file_stream, line);
+    if (line.empty()) {
+      break;
+    }
+    stringstream line_stream{line};
+    string obj_name, file_name;
+    line_stream >> obj_name >> file_name;
+    obj_name_to_filename_up->[obj_name] = file_name;
+  }
+  
+  return std::move(obj_name_to_filename_up);
+  
+}
+
+
+// Store object_copy data (with transformed vertices)
+// TODO(jg): make sure divide by w to get cartesian NDC.
+// EX
+//  auto obj_to_copy_data_vec = make_obj_to_copy_data_vec(obj_copy_info_vec_up.get(),
+//                                                        obj_to_data_up.get());
+// Store copy object data
+unique_ptr<std::map<std::string, std::vector<ObjectData>>>
+make_obj_to_copy_data_vec(std::vector<ObjectCopyInfo>* obj_copy_info_vec_p,
+                          std::map<std::string, ObjectData>* obj_to_data_p) {
+  using std::map;
+  using std::string;
+  using std::vector;
+
+  using map_s_objdatavec = map<string, vector<ObjectData>>;
+
+  unique_ptr<map_s_objdatavec> obj_to_vector_of_copy_data_up{new map_s_objdatavec};
+
+  for (const auto& obj_copy_info : *obj_copy_info_vec_p) {
+    auto obj_name = obj_copy_info.obj_id;
+    vector<Vertex> vertices;
+    MatrixXd transform = obj_copy_info.transform;
+    for (const auto& untransformed_vertex : (*obj_to_data_p)[obj_name].vertices) {
+      auto new_vertex = Vertex::transform_vertex(untransformed_vertex, transform);
+      vertices.push_back(new_vertex);
+    }
+    auto it = *(obj_to_vector_of_copy_data_up).find(obj_name);
+    if (it != *(obj_to_vector_of_copy_data_up).end()) {
+      *(obj_to_vector_of_copy_data_up)[obj_name].emplace_back
+        (std::move(vertices), (*obj_to_data_p)[obj_name].faces);
+    } else {
+      vector<ObjectData> od;
+      od.emplace_back(std::move(vertices), (*obj_to_data_p)[obj_name].faces);
+      obj_name_to_vector_of_copy_data[obj_name] = std::move(od);
+    }
+  }
+}
 
 
 int main(int argc, char *argv[])
@@ -60,8 +164,6 @@ int main(int argc, char *argv[])
 
   /** Parse the scene description file into data structures. */
   // Parse camera attributes
-  // TODO(jg): When camera is constructed, make it hold the
-  //           camera transform, inv cam transform, and perspective projection matrix.
 
   auto camera_p = parse_camera(scene_desc_file_stream);
   
@@ -73,7 +175,7 @@ int main(int argc, char *argv[])
   auto obj_copy_info_vec_up = parse_obj_copy_info(scene_desc_file_stream);
 
   // Parse object data
-  auto obj_to_data_up = parse_obj_to_data(scene_desc_file_stream);
+  auto obj_to_data_up = make_obj_to_data(obj_name_to_filename_up.get());
 
   // Augment object_copy_info to transform points into NDC
   for (auto& obj_copy_info : obj_copy_info_vec) {
