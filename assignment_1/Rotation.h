@@ -14,11 +14,17 @@ public:
   MatrixXd matrix;
   explicit RotationGeneral(T rx, T ry, T rz, T theta)
     : matrix{4, 4} {
-    rotate_vals_to_matrix(matrix, rx, ry, rz, theta);
+    rotation_vals_to_matrix(matrix, rx, ry, rz, theta);
   }; 
 
   /** Make a transformation matrix from rotation parameters. */
   static void rotation_vals_to_matrix(MatrixXd& matrix, T rx, T ry, T rz, T theta) {
+    // Normalize
+    T length = sqrt(rx * rx * ry * ry * rz * rz);
+    rx /= length;
+    ry /= length;
+    rz /= length;
+
     T ct = cos(theta);
     T st = sin(theta);
     T rx2 = rx * rx;

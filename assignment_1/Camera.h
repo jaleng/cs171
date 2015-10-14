@@ -28,12 +28,12 @@ public:
     transform = position.matrix * orientation.matrix;
     inverseTransform = transform.inverse();
     
-    auto n = perspective.n;
-    auto f = perspective.f;
-    auto t = perspective.t;
-    auto b = perspective.b;
-    auto l = perspective.l;
-    auto r = perspective.r;
+    auto n = perspective.near;
+    auto f = perspective.far;
+    auto t = perspective.top;
+    auto b = perspective.bottom;
+    auto l = perspective.left;
+    auto r = perspective.right;
 
     perspective_projection_matrix <<
       2 * n / (r - l), 0, (r + l) / (r - l), 0,
