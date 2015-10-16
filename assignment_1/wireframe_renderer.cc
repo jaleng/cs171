@@ -17,7 +17,6 @@ std::unique_ptr<Camera>
 parse_camera(std::ifstream& file_stream) {
   using std::string;
   using std::stringstream;
-
   
   double px, py, pz;
   double ox, oy, oz, theta;
@@ -59,7 +58,7 @@ parse_camera(std::ifstream& file_stream) {
   return std::move(camera_up);
 }
 
-// Parse object data
+/** Parse object data. */
 std::unique_ptr<std::map<std::string, ObjectData>>
 make_obj_to_data(const std::map<std::string, std::string>* obj_name_to_file_name_p) {
   using std::map;
@@ -99,7 +98,7 @@ make_obj_to_data(const std::map<std::string, std::string>* obj_name_to_file_name
 }
 
 
-// Parse object_copy attributes
+/** Parse object_copy attributes. */
 std::unique_ptr<std::vector<ObjectCopyInfo>>
 parse_obj_copy_info(std::ifstream& file_stream) {
   using std::string;
@@ -158,9 +157,7 @@ parse_obj_copy_info(std::ifstream& file_stream) {
   return std::move(obj_copy_info_vec_up);
 }
 
-
-
-// Parse object attributes
+/** Parse object attributes. */
 std::unique_ptr<std::map<std::string, std::string>>
 parse_obj_to_filename(std::ifstream& file_stream) {
   using std::map;
@@ -168,6 +165,7 @@ parse_obj_to_filename(std::ifstream& file_stream) {
   using std::stringstream;
   using mapss = map<string, string>;
 
+  // Read until "objects:" line
   while (!file_stream.eof()) {
     string line;
     getline(file_stream, line);
@@ -177,6 +175,7 @@ parse_obj_to_filename(std::ifstream& file_stream) {
   }
 
   std::unique_ptr<mapss> obj_name_to_filename_up{new mapss};
+
   while (!file_stream.eof()) {
     string line;
     getline(file_stream, line);
@@ -190,11 +189,10 @@ parse_obj_to_filename(std::ifstream& file_stream) {
   }
   
   return std::move(obj_name_to_filename_up);
-  
 }
 
 
-// Store object_copy data (with transformed vertices)
+/** Store object_copy data (with transformed vertices). */
 std::unique_ptr<std::map<std::string, std::vector<ObjectData>>>
 make_obj_to_copy_data_vec(std::vector<ObjectCopyInfo>* obj_copy_info_vec_p,
                           std::map<std::string, ObjectData>* obj_to_data_p) {
@@ -227,6 +225,7 @@ make_obj_to_copy_data_vec(std::vector<ObjectCopyInfo>* obj_copy_info_vec_p,
   return std::move(obj_to_vector_of_copy_data_up);
 }
 
+/** Take canvas and generate a ppm file, output to stdout. */
 void ppm_to_stdout(Canvas& c) {
   using std::cout;
   using std::endl;
@@ -246,6 +245,7 @@ void ppm_to_stdout(Canvas& c) {
   }
 }
 
+/** Read a scene description file and output image to stdout as ppm file. */
 int main(int argc, char *argv[])
 {
   /** Read the cli args. */
@@ -255,10 +255,9 @@ int main(int argc, char *argv[])
   int yres = atoi(argv[3]);
 
   /** Parse the scene description file into data structures. */
-  // Parse camera attributes
 
+  // Parse camera attributes
   auto camera_p = parse_camera(scene_desc_file_stream);
-  
 
   // Parse object attributes
   auto obj_name_to_filename_up = parse_obj_to_filename(scene_desc_file_stream);
