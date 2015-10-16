@@ -69,6 +69,29 @@ public:
       // Line-drawing algorithm works differently depending on the slope.
       // treat m>1, 1 >= m > 0, 0 >= m > -1, m <= -1 cases separately
 
+      /**
+       *  Generalization of Bresenham's line algorithm
+       *  1st octant - as given in class notes
+       *  2nd octant - switch x and y, then as 1st octant
+       *  3rd octant - switch x0,y0 with x1,y1 -> 7th octant
+       *  4th octant - switch x0,y0 with x1,y1 -> 8th octant
+       *  5th octant - switch x0,y0 with x1,y1 -> 1st octant
+       *  6th octant - switch x0,y0 with x1,y1 -> 2nd octant
+       *  7th octant -
+       *    sim to 1st octant,
+       *    e=0 (running difference), x=x0,
+       *    iterate from y0 down to y1,
+       *    fill(x,y)
+       *    if e + dx/(-dy) < 0.5, 
+       *      let e = e + dx/(-dy) and do not increment x,
+       *    else  e = e + dx/(-dy) -1 and increment x 
+       *
+       *    multiply all expressions by dy (or 2*dy) to get integer arithmetic only
+       *
+       *  8th octant - same as 1st octant except negate dy, 
+       *               decrement y instead of incrementing it
+       */
+
       if (dy > dx) {
         // m > 1
         int x = x0;
