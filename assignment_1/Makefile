@@ -13,7 +13,7 @@ FLAGS = -g -Wall -std=c++14
 INCLUDE = -I./
 SOURCES = *.h *.cc
 
-EXENAME = wireframe
+EXENAME = wireframe_renderer
 
 all: $(SOURCES)
 	$(CC) $(FLAGS) -o $(EXENAME) $(INCLUDE) $(SOURCES)
