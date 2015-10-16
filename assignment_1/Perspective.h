@@ -1,3 +1,4 @@
+/** Class to hold perspective info (frustrum parameters) */
 class Perspective {
 public:
   double near;
@@ -7,6 +8,7 @@ public:
   double left;
   double right;
 
+  /** Construct perspective object given frustrum parameters */
   explicit Perspective(double _near, double _far, double _left,
                        double _right, double _top, double _bottom)
     : near{_near},
