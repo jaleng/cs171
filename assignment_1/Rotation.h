@@ -20,7 +20,7 @@ public:
   /** Make a transformation matrix from rotation parameters. */
   static void rotation_vals_to_matrix(MatrixXd& matrix, T rx, T ry, T rz, T theta) {
     // Normalize
-    T length = sqrt(rx * rx * ry * ry * rz * rz);
+    T length = sqrt(rx * rx + ry * ry + rz * rz);
     rx /= length;
     ry /= length;
     rz /= length;

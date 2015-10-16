@@ -10,6 +10,7 @@
 #include "ObjectData.h"
 #include "ObjectCopyInfo.h"
 #include "Scale.h"
+#include "Canvas.h"
 
 
 
@@ -172,6 +173,14 @@ parse_obj_to_filename(std::ifstream& file_stream) {
   using std::stringstream;
   using mapss = map<string, string>;
 
+  while (!file_stream.eof()) {
+    string line;
+    getline(file_stream, line);
+    if (line == "objects:") {
+      break;
+    }
+  }
+
   std::unique_ptr<mapss> obj_name_to_filename_up{new mapss};
   while (!file_stream.eof()) {
     string line;
@@ -228,7 +237,30 @@ make_obj_to_copy_data_vec(std::vector<ObjectCopyInfo>* obj_copy_info_vec_p,
   return std::move(obj_to_vector_of_copy_data_up);
 }
 
+void ppm_to_stdout(Canvas& c) {
+  using std::cout;
+  using std::endl;
+  
+  cout << "P3" << endl
+       << c.width << " " << c.height << endl
+       << "255" << endl;
 
+  for (int j = 0; j < c.height; ++j) {
+    for (int i = 0; i < c.width; ++i) {
+      if (c.pixels(i,j) == 1) {
+        cout << "255 255 255" << endl;
+      } else {
+        cout << "0 0 0" << endl;
+      }
+    }
+  }
+}
+
+// DEBUG
+void printMatrix(MatrixXd& m) {
+  std::cout << m << std::endl;
+}
+//*/// ENDEBUG
 int main(int argc, char *argv[])
 {
   /** Read the cli args. */
@@ -236,9 +268,6 @@ int main(int argc, char *argv[])
   std::ifstream scene_desc_file_stream{argv[1]};
   int xres = atoi(argv[2]);
   int yres = atoi(argv[3]);
-  // DEBUG
-  std::cout << xres << " " << yres << std::endl;
-  // ENDEBUG
 
   /** Parse the scene description file into data structures. */
   // Parse camera attributes
@@ -252,26 +281,40 @@ int main(int argc, char *argv[])
   // Parse object_copy attributes
   auto obj_copy_info_vec_up = parse_obj_copy_info(scene_desc_file_stream);
 
+  /*/ DEBUG
+  printMatrix(obj_copy_info_vec_up->begin()->transform);
+
+  //*/// ENDEBUG
+
   // Parse object data
   auto obj_to_data_up = make_obj_to_data(obj_name_to_filename_up.get());
 
   // Augment object_copy_info to transform points into NDC
   for (auto& obj_copy_info : (*obj_copy_info_vec_up)) {
     // Apply perspective projection transform
-    auto tmp = obj_copy_info.transform;
+    auto tmp = camera_p->inverseTransform * obj_copy_info.transform;
     obj_copy_info.transform = camera_p->perspective_projection_matrix * tmp;
   }
 
   // Store object_copy data (with transformed vertices)
-  auto obj_to_copy_data_vec = make_obj_to_copy_data_vec(obj_copy_info_vec_up.get(),
-                                                        obj_to_data_up.get());
+  auto obj_to_copy_data_vec_up = make_obj_to_copy_data_vec(obj_copy_info_vec_up.get(),
+                                                           obj_to_data_up.get());
 
-  // Mapping from NDC to pixel coordinates
-  // multiply x by x_res / 2 then add x_res/2
-  // multiplly y by y_res / 2 then add y_res/2
+  // Make canvas
+  auto canvas = Canvas{xres, yres};
 
-  // Use Bresenham's line algorithm
+  // Draw all object_copy's
+  for (auto it = obj_to_copy_data_vec_up->begin();
+       it != obj_to_copy_data_vec_up->end();
+       ++it) {
+    auto copy_vec = it->second;
+    for (auto& obj_data : copy_vec) {
+      canvas.drawWireFrame(obj_data);
+    }
+  }
 
   // Output pixel grid to stdout as a .ppm image file
+  ppm_to_stdout(canvas);
+  
   return 0;
 }
