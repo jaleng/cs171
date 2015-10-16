@@ -6,17 +6,31 @@
 #include "Perspective.h"
 #include <Eigen/Dense>
 
+/** Class to hold data related to a camera and its transforms */
 class Camera {
 private:
+  /** Position of camera (ie translation) */
   TranslationD position;
+  /** Orientation of camera (ie rotation) */
   RotationD orientation;
+  /** Perspective of camera (ie frustrum parameters) */
   Perspective perspective;
 
 public:
+  /** Camera transform */
   Eigen::MatrixXd transform;
+
+  /** Inverse camera transform
+   *  Use this to transform objects from world-space to camera-space
+   */
   Eigen::MatrixXd inverseTransform;
+
+  /** Perspective projection matrix
+   *  Use this to transform objects from camera-space to NDC
+   */
   Eigen::MatrixXd perspective_projection_matrix;
   
+  /** Construct a camera given position, orientation, and perspective. */
   Camera(TranslationD _position, RotationD _orientation, Perspective _perspective)
     : position{_position},
       orientation{_orientation},
