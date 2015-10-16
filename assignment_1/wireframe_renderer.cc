@@ -12,8 +12,6 @@
 #include "Scale.h"
 #include "Canvas.h"
 
-
-
 /** Parse camera parameters and return a Camera unique_ptr. */
 std::unique_ptr<Camera>
 parse_camera(std::ifstream& file_stream) {
@@ -62,7 +60,6 @@ parse_camera(std::ifstream& file_stream) {
 }
 
 // Parse object data
-//  auto obj_to_data_up = parse_obj_to_data(scene_desc_file_stream);
 std::unique_ptr<std::map<std::string, ObjectData>>
 make_obj_to_data(const std::map<std::string, std::string>* obj_name_to_file_name_p) {
   using std::map;
@@ -103,7 +100,6 @@ make_obj_to_data(const std::map<std::string, std::string>* obj_name_to_file_name
 
 
 // Parse object_copy attributes
-//  auto obj_copy_info_vec_up = parse_obj_copy_info(scene_desc_file_stream);
 std::unique_ptr<std::vector<ObjectCopyInfo>>
 parse_obj_copy_info(std::ifstream& file_stream) {
   using std::string;
@@ -165,7 +161,6 @@ parse_obj_copy_info(std::ifstream& file_stream) {
 
 
 // Parse object attributes
-// auto obj_name_to_filename_up = parse_obj_to_filename(scene_desc_file_stream);
 std::unique_ptr<std::map<std::string, std::string>>
 parse_obj_to_filename(std::ifstream& file_stream) {
   using std::map;
@@ -200,11 +195,6 @@ parse_obj_to_filename(std::ifstream& file_stream) {
 
 
 // Store object_copy data (with transformed vertices)
-// TODO(jg): make sure divide by w to get cartesian NDC.
-// EX
-//  auto obj_to_copy_data_vec = make_obj_to_copy_data_vec(obj_copy_info_vec_up.get(),
-//                                                        obj_to_data_up.get());
-// Store copy object data
 std::unique_ptr<std::map<std::string, std::vector<ObjectData>>>
 make_obj_to_copy_data_vec(std::vector<ObjectCopyInfo>* obj_copy_info_vec_p,
                           std::map<std::string, ObjectData>* obj_to_data_p) {
@@ -256,11 +246,6 @@ void ppm_to_stdout(Canvas& c) {
   }
 }
 
-// DEBUG
-void printMatrix(MatrixXd& m) {
-  std::cout << m << std::endl;
-}
-//*/// ENDEBUG
 int main(int argc, char *argv[])
 {
   /** Read the cli args. */
@@ -280,11 +265,6 @@ int main(int argc, char *argv[])
 
   // Parse object_copy attributes
   auto obj_copy_info_vec_up = parse_obj_copy_info(scene_desc_file_stream);
-
-  /*/ DEBUG
-  printMatrix(obj_copy_info_vec_up->begin()->transform);
-
-  //*/// ENDEBUG
 
   // Parse object data
   auto obj_to_data_up = make_obj_to_data(obj_name_to_filename_up.get());
