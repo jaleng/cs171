@@ -96,10 +96,10 @@ public:
         int x = x0;
         for (int y = y0; y >= y1; --y) {
           fill(x, y);
-          if (2 * (epsilon - dx) < dy) {
+          if (2 * (epsilon - dx) > dy) {
             epsilon = epsilon - dx;
           } else {
-            epsilon = epsilon - dx + dy;
+            epsilon = epsilon - dx - dy;
             x = x + 1;
           }
         }
