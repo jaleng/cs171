@@ -8,8 +8,8 @@ right 0.5
 top 0.5
 bottom -0.5
 
-light 2 2 5 , 1 0 1 , 0.87
-light -2 2 5 , 0 1 1 , 0.87
+light 2 2 5 , 1 0 1 , 0.67
+light -2 2 5 , 0 1 1 , 0.01
 
 objects:
 kitten kitten.obj

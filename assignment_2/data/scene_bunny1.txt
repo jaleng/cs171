@@ -16,7 +16,7 @@ bunny bunny.obj
 bunny
 ambient 0.2 0.1 0.2
 diffuse 0.6969 0.0327293 0.626496
-0.2 0.2 0.2
+specular 0.1 0.1 0.1
 shininess 0.2
 s 1 1 1
 t 0.4 -0.9 0
