@@ -10,6 +10,18 @@
 #include "Camera.h"
 #include "Light.h"
 
+std::unique_ptr<Scene> parse_scene(string scene_filename) {
+  auto scene_desc_file_stream = std::ifstream{scene_filename};
+  // Parse the camera
+  auto camera_up = parse_camera(scene_desc_file_stream);
+  // TODO(jg): Parse lights
+  auto light_vec_up = parse_lights(scene_desc_file_stream);
+  // TODO(jg): Parse Objects (obj_name, filename)
+  // TODO(jg): Parse Object-copies
+  // TODO(jg): Read .obj files
+}
+
+
 /** Parse camera parameters and return a Camera unique_ptr. */
 std::unique_ptr<Camera>
 parse_camera(std::ifstream& file_stream) {
