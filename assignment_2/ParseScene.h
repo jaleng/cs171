@@ -56,7 +56,7 @@ parse_camera(std::ifstream& file_stream) {
   return std::move(camera_up);
 }
 
-/** TODO(jg): Parse lights **/
+/** Parse lights **/
 std::unique_ptr<std::vector<Light>>
 parse_lights(std::ifstream& file_stream) {
   using std::string;
@@ -67,6 +67,10 @@ parse_lights(std::ifstream& file_stream) {
   while (!file_stream.eof()) {
     string line;
     getline(file_stream, line);
+    if (line.empty()) {
+      // Empty line, no more lights.
+      break;
+    }
     stringstream line_stream{line};
     string token;
     line_stream >> token;
@@ -96,6 +100,7 @@ parse_lights(std::ifstream& file_stream) {
       // Push new light to vector.
       light_vec_up->emplace_back(x, y, z, r, g, b, k);
     } else {
+      assert(false); // Parsing Lights error.
       break;
     }
   }
