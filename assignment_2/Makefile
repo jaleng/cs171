@@ -11,9 +11,9 @@ FLAGS = -g -Wall -std=c++14
 # folder--which your program will depend on--is located one directory above the
 # directory that contains this Makefile.
 INCLUDE = -I../
-SOURCES = *.cc # *.h 
+SOURCES = *.cc # *.h
 
-EXENAME = shaded_renderer
+EXENAME = shaded
 
 all: $(SOURCES)
 	$(CC) $(FLAGS) -o $(EXENAME) $(INCLUDE) $(SOURCES)
