@@ -14,9 +14,10 @@ std::unique_ptr<Scene> parse_scene(string scene_filename) {
   auto scene_desc_file_stream = std::ifstream{scene_filename};
   // Parse the camera
   auto camera_up = parse_camera(scene_desc_file_stream);
-  // TODO(jg): Parse lights
+  // Parse lights
   auto light_vec_up = parse_lights(scene_desc_file_stream);
-  // TODO(jg): Parse Objects (obj_name, filename)
+  // Parse Objects (obj_name, filename)
+  auto objid_to_filename_up = parse_obj_to_filename(scene_desc_file_stream);
   // TODO(jg): Parse Object-copies
   // TODO(jg): Read .obj files
 }
@@ -178,6 +179,11 @@ parse_obj_copy_info(std::ifstream& file_stream) {
     string obj_name;
     line_stream >> obj_name;
 
+    double amb_r = 0, amb_g = 0, amb_b = 0;
+    double dif_r = 0, dif_g = 0, dif_b = 0;
+    double spc_r = 0, spc_g = 0, spc_b = 0;
+    double shininess = 0;
+
     MatrixXd transform(4,4);
     MatrixXd next_transform(4, 4);
     MatrixXd temp(4,4);
@@ -185,24 +191,36 @@ parse_obj_copy_info(std::ifstream& file_stream) {
     
     for (getline(file_stream, line); !line.empty(); getline(file_stream, line)) {
       stringstream transform_line_stream(line);
-      char shape_token = transform_line_stream.get();
+      string token;
+      transform_line_stream >> token;
 
-      if (shape_token == 't') {
+      if (token == "ambient") {
+        transform_line_stream >> amb_r >> amb_g >> amb_b;
+        continue;
+      } else if (token == "diffuse") {
+        transform_line_stream >> dif_r >> dif_g >> dif_b;
+        continue;
+      } else if (token == "specular") {
+        transform_line_stream >> spc_r >> spc_g >> spc_b;
+        continue;
+      } else if (token == "shininess") {
+        transform_line_stream >> shininess;
+        continue;
+      } else if (token == "t") {
         double tx, ty, tz;
         transform_line_stream >> tx >> ty >> tz;
         TranslationD::translation_vals_to_matrix(next_transform, tx, ty, tz);
-      
-      } else if (shape_token == 'r') {
+      } else if (token == "r") {
         double rx, ry, rz, theta;
         transform_line_stream >> rx >> ry >> rz >> theta;
         RotationD::rotation_vals_to_matrix(next_transform, rx, ry, rz, theta);
 
-      } else if (shape_token == 's') {
+      } else if (token == "s") {
         double sx, sy, sz;
         transform_line_stream >> sx >> sy >> sz;
         ScaleD::scale_vals_to_matrix(next_transform, sx, sy, sz);
-      
       } else {
+        assert(false)  // Error parsing object copy.
         continue;
       }
 
