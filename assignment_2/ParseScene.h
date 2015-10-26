@@ -6,6 +6,7 @@
 #include <string>
 #include <sstream>
 #include <cassert>
+#include <memory>
 
 #include "Camera.h"
 #include "Light.h"
@@ -18,7 +19,8 @@ std::unique_ptr<Scene> parse_scene(string scene_filename) {
   auto light_vec_up = parse_lights(scene_desc_file_stream);
   // Parse Objects (obj_name, filename)
   auto objid_to_filename_up = parse_obj_to_filename(scene_desc_file_stream);
-  // TODO(jg): Parse Object-copies
+  // Parse Object-copies
+  auto obj_copy_info_vec_up = parse_obj_copy_info(scene_desc_file_stream);
   // TODO(jg): Read .obj files
 }
 
@@ -129,9 +131,12 @@ make_obj_to_data(const std::map<std::string, std::string>* obj_name_to_file_name
   using std::stringstream;
   using std::ifstream;
 
-  std::unique_ptr<map<string, ObjectData>> obj_name_to_data_up {new map<string, ObjectData>};
-  
-  for (auto it = obj_name_to_file_name_p->begin(); it != obj_name_to_file_name_p->end(); ++it) {
+  std::unique_ptr<map<string, ObjectData>>
+    obj_name_to_data_up {new map<string, ObjectData>};
+
+  for (auto it = obj_name_to_file_name_p->begin();
+       it != obj_name_to_file_name_p->end();
+       ++it) {
     string obj_name = it->first;
     string file_name = it->second;
     ifstream obj_fileStream{file_name};
@@ -149,8 +154,33 @@ make_obj_to_data(const std::map<std::string, std::string>* obj_name_to_file_name
         vertices.emplace_back(x, y, z);
       } else if (shape_token == 'f') {
         int v1, v2, v3;
-        line_stream >> v1 >> v2 >> v3;
-        faces.emplace_back(v1, v2, v3);
+        int v1_normal, v2_normal, v3_normal;
+        string v_and_norm;
+        stringstream vstream;
+        separator_idx = size_t;
+
+        line_stream >> v_and_norm;
+        separator_idx = v_and_norm.find("//");
+        v_and_norm[separator_idx] = " ";
+        v_and_norm[separator_idx + 1] = " ";
+        vstream = v_and_norm;
+        vstream >> v1 >> v1_normal;
+
+        line_stream >> v_and_norm;
+        separator_idx = v_and_norm.find("//");
+        v_and_norm[separator_idx] = " ";
+        v_and_norm[separator_idx + 1] = " ";
+        vstream {v_and_norm};
+        vstream >> v2 >> v2_normal;
+
+        line_stream >> v_and_norm;
+        separator_idx = v_and_norm.find("//");
+        v_and_norm[separator_idx] = " ";
+        v_and_norm[separator_idx + 1] = " ";
+        vstream {v_and_norm};
+        vstream >> v3 >> v3_normal;
+
+        faces.emplace_back(v1, v2, v3, v1_normal, v2_normal, v3_normal);
       }
     }
     ObjectData obj_data{std::move(vertices), std::move(faces)};
@@ -158,6 +188,7 @@ make_obj_to_data(const std::map<std::string, std::string>* obj_name_to_file_name
   }
   return std::move(obj_name_to_data_up);
 }
+
 /** Parse object_copy attributes. */
 std::unique_ptr<std::vector<ObjectCopyInfo>>
 parse_obj_copy_info(std::ifstream& file_stream) {

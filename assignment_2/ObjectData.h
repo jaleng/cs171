@@ -11,6 +11,7 @@
 class ObjectData {
  public:
   std::vector<Vertex> vertices;
+  std::vector<NormalVector> normals;
   std::vector<Face> faces;
   explicit ObjectData() : vertices{}, faces{} {}
   explicit ObjectData(std::vector<Vertex> _vertices, std::vector<Face> _faces)
