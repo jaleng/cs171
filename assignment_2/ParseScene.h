@@ -229,7 +229,12 @@ parse_obj_copy_info(std::ifstream& file_stream) {
     }
 
     // Store (name,transform) into a vector
-    (*obj_copy_info_vec_up).emplace_back(obj_name, transform);
+    (*obj_copy_info_vec_up).emplace_back(obj_name,
+                                         amb_r, amb_g, amb_b,
+                                         dif_r, dif_g, dif_b,
+                                         spc_r, spc_g, spc_b,
+                                         shininess,
+                                         transform);
   }
   return std::move(obj_copy_info_vec_up);
 }
