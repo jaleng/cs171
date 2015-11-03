@@ -15,7 +15,7 @@ SOURCES = *.cc # *.h
 
 EXENAME = shaded
 
-all: $(SOURCES)
+all: $(SOURCES) *.h
 	$(CC) $(FLAGS) -o $(EXENAME) $(INCLUDE) $(SOURCES)
 
 clean:

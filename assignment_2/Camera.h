@@ -4,6 +4,7 @@
 #include "Rotation.h"
 #include "Translation.h"
 #include "Perspective.h"
+#include "Vertex.h"
 #include <Eigen/Dense>
 
 /** Class to hold data related to a camera and its transforms */
@@ -54,6 +55,18 @@ public:
       0, 2 * n / (t - b), (t + b) / (t - b), 0,
       0, 0, -(f + n) / (f - n), -2 * f * n / (f - n),
       0, 0, -1, 0;
+  }
+
+  Eigen::Vector3d getPosition() const {
+    Vector3d v;
+    v << position.matrix(0, 3), position.matrix(1, 3), position.matrix(2, 3);
+    return v;
+  }
+
+  Vertex world2NDC(Vertex v) const {
+    v = Vertex::transform_vertex(v, inverseTransform);
+    v = Vertex::transform_vertex(v, perspective_projection_matrix);
+    return v;
   }
 };
 

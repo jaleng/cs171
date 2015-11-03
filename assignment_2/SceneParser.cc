@@ -1,18 +1,10 @@
-// ParseScene.h
-#ifndef _PARSESCENE_H_
-#define _PARSESCENE_H_
+#include "SceneParser.h"
 
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <cassert>
 #include <memory>
 
-#include "Camera.h"
-#include "Light.h"
+#include "Scale.h"
 
-std::unique_ptr<Scene> parse_scene(string scene_filename) {
-  auto scene_desc_file_stream = std::ifstream{scene_filename};
+std::unique_ptr<Scene> SceneParser::parse_scene(std::ifstream& scene_desc_file_stream) {
   // Parse the camera
   auto camera_up = parse_camera(scene_desc_file_stream);
   // Parse lights
@@ -21,13 +13,24 @@ std::unique_ptr<Scene> parse_scene(string scene_filename) {
   auto objid_to_filename_up = parse_obj_to_filename(scene_desc_file_stream);
   // Parse Object-copies
   auto obj_copy_info_vec_up = parse_obj_copy_info(scene_desc_file_stream);
-  // TODO(jg): Read .obj files
+  // Read .obj files
+  auto objid_to_data_up = make_obj_to_data(objid_to_filename_up.get());
+
+  // Make vector of ObjectCopys
+  auto obj_copy_vec_up = make_obj_copy_vec(obj_copy_info_vec_up.get(),
+                                        objid_to_data_up.get());
+  // Return a scene object
+  auto ret = std::unique_ptr<Scene> {new Scene(std::move(camera_up),
+                                               std::move(light_vec_up),
+                                               std::move(objid_to_data_up),
+                                               std::move(obj_copy_vec_up))};
+  return std::move(ret);
 }
 
 
 /** Parse camera parameters and return a Camera unique_ptr. */
 std::unique_ptr<Camera>
-parse_camera(std::ifstream& file_stream) {
+SceneParser::parse_camera(std::ifstream& file_stream) {
   using std::string;
   using std::stringstream;
   
@@ -73,12 +76,12 @@ parse_camera(std::ifstream& file_stream) {
 
 /** Parse lights **/
 std::unique_ptr<std::vector<Light>>
-parse_lights(std::ifstream& file_stream) {
+SceneParser::parse_lights(std::ifstream& file_stream) {
   using std::string;
   using std::stringstream;
   using std::vector;
 
-  auto light_vec_up = unique_ptr<vector<Light>>{new vector<Light>{}};
+  auto light_vec_up = std::unique_ptr<vector<Light>>{new vector<Light>{}};
   while (!file_stream.eof()) {
     string line;
     getline(file_stream, line);
@@ -124,7 +127,7 @@ parse_lights(std::ifstream& file_stream) {
 
 /** Parse object data. */
 std::unique_ptr<std::map<std::string, ObjectData>>
-make_obj_to_data(const std::map<std::string, std::string>* obj_name_to_file_name_p) {
+SceneParser::make_obj_to_data(const std::map<std::string, std::string>* obj_name_to_file_name_p) {
   using std::map;
   using std::string;
   using std::vector;
@@ -141,49 +144,54 @@ make_obj_to_data(const std::map<std::string, std::string>* obj_name_to_file_name
     string file_name = it->second;
     ifstream obj_fileStream{file_name};
     vector<Vertex> vertices;
+    vector<NormalVector> normals;
     vector<Face> faces;
 
     while (!obj_fileStream.eof()) {
       string line;
       getline(obj_fileStream, line);
       stringstream line_stream{line};
-      char shape_token = line_stream.get();
-      if (shape_token == 'v') {
+      string token;
+      line_stream >> token;
+      if (token == "v") {
         float x, y, z;
         line_stream >> x >> y >> z;
         vertices.emplace_back(x, y, z);
-      } else if (shape_token == 'f') {
+      } else if (token == "vn") {
+        double x, y, z;
+        line_stream >> x >> y >> z;
+        normals.emplace_back(x, y, z);
+      } else if (token == "f") {
         int v1, v2, v3;
         int v1_normal, v2_normal, v3_normal;
         string v_and_norm;
-        stringstream vstream;
-        separator_idx = size_t;
+        size_t separator_idx;
 
         line_stream >> v_and_norm;
         separator_idx = v_and_norm.find("//");
-        v_and_norm[separator_idx] = " ";
-        v_and_norm[separator_idx + 1] = " ";
-        vstream = v_and_norm;
-        vstream >> v1 >> v1_normal;
+        v_and_norm[separator_idx] = ' ';
+        v_and_norm[separator_idx + 1] = ' ';
+        stringstream vstream1{v_and_norm};
+        vstream1 >> v1 >> v1_normal;
 
         line_stream >> v_and_norm;
         separator_idx = v_and_norm.find("//");
-        v_and_norm[separator_idx] = " ";
-        v_and_norm[separator_idx + 1] = " ";
-        vstream {v_and_norm};
-        vstream >> v2 >> v2_normal;
+        v_and_norm[separator_idx] = ' ';
+        v_and_norm[separator_idx + 1] = ' ';
+        stringstream vstream2{v_and_norm};
+        vstream2 >> v2 >> v2_normal;
 
         line_stream >> v_and_norm;
         separator_idx = v_and_norm.find("//");
-        v_and_norm[separator_idx] = " ";
-        v_and_norm[separator_idx + 1] = " ";
-        vstream {v_and_norm};
-        vstream >> v3 >> v3_normal;
+        v_and_norm[separator_idx] = ' ';
+        v_and_norm[separator_idx + 1] = ' ';
+        stringstream vstream3{v_and_norm};
+        vstream3 >> v3 >> v3_normal;
 
         faces.emplace_back(v1, v2, v3, v1_normal, v2_normal, v3_normal);
       }
     }
-    ObjectData obj_data{std::move(vertices), std::move(faces)};
+    ObjectData obj_data{std::move(vertices), std::move(normals), std::move(faces)};
     (*obj_name_to_data_up)[obj_name] = obj_data;
   }
   return std::move(obj_name_to_data_up);
@@ -191,7 +199,7 @@ make_obj_to_data(const std::map<std::string, std::string>* obj_name_to_file_name
 
 /** Parse object_copy attributes. */
 std::unique_ptr<std::vector<ObjectCopyInfo>>
-parse_obj_copy_info(std::ifstream& file_stream) {
+SceneParser::parse_obj_copy_info(std::ifstream& file_stream) {
   using std::string;
   using std::stringstream;
   using std::vector;
@@ -216,9 +224,11 @@ parse_obj_copy_info(std::ifstream& file_stream) {
     double shininess = 0;
 
     MatrixXd transform(4,4);
+    MatrixXd transform_without_translations(4,4);
     MatrixXd next_transform(4, 4);
     MatrixXd temp(4,4);
     transform = MatrixXd::Identity(4, 4);
+    transform_without_translations = MatrixXd::Identity(4, 4);
     
     for (getline(file_stream, line); !line.empty(); getline(file_stream, line)) {
       stringstream transform_line_stream(line);
@@ -251,12 +261,16 @@ parse_obj_copy_info(std::ifstream& file_stream) {
         transform_line_stream >> sx >> sy >> sz;
         ScaleD::scale_vals_to_matrix(next_transform, sx, sy, sz);
       } else {
-        assert(false)  // Error parsing object copy.
+        assert(false);  // Error parsing object copy.
         continue;
       }
 
       temp = next_transform * transform;
       transform = temp;
+      if (token != "t") {
+        temp = next_transform * transform_without_translations;
+        transform_without_translations = temp;
+      }
     }
 
     // Store (name,transform) into a vector
@@ -265,14 +279,15 @@ parse_obj_copy_info(std::ifstream& file_stream) {
                                          dif_r, dif_g, dif_b,
                                          spc_r, spc_g, spc_b,
                                          shininess,
-                                         transform);
+                                         transform,
+                                         transform_without_translations);
   }
   return std::move(obj_copy_info_vec_up);
 }
 
 /** Parse object attributes. */
 std::unique_ptr<std::map<std::string, std::string>>
-parse_obj_to_filename(std::ifstream& file_stream) {
+SceneParser::parse_obj_to_filename(std::ifstream& file_stream) {
   using std::map;
   using std::string;
   using std::stringstream;
@@ -305,38 +320,72 @@ parse_obj_to_filename(std::ifstream& file_stream) {
 }
 
 /** Store object_copy data (with transformed vertices). */
-std::unique_ptr<std::map<std::string, std::vector<ObjectData>>>
-make_obj_to_copy_data_vec(std::vector<ObjectCopyInfo>* obj_copy_info_vec_p,
-                          std::map<std::string, ObjectData>* obj_to_data_p) {
-  using std::map;
-  using std::string;
+// std::unique_ptr<std::map<std::string, std::vector<ObjectData>>>
+// SceneParser::make_obj_to_copy_data_vec(std::vector<ObjectCopyInfo>* obj_copy_info_vec_p,
+//                           std::map<std::string, ObjectData>* obj_to_data_p) {
+//   using std::map;
+//   using std::string;
+//   using std::vector;
+
+//   using map_s_objdatavec = map<string, vector<ObjectData>>;
+
+//   std::unique_ptr<map_s_objdatavec> obj_to_vector_of_copy_data_up{new map_s_objdatavec};
+
+//   for (const auto& obj_copy_info : *obj_copy_info_vec_p) {
+//     auto obj_name = obj_copy_info.obj_id;
+//     vector<Vertex> vertices;
+//     MatrixXd transform = obj_copy_info.transform;
+//     for (const auto& untransformed_vertex : (*obj_to_data_p)[obj_name].vertices) {
+//       auto new_vertex = Vertex::transform_vertex(untransformed_vertex, transform);
+//       vertices.push_back(new_vertex);
+//     }
+//     auto it = (*obj_to_vector_of_copy_data_up).find(obj_name);
+//     if (it != (*obj_to_vector_of_copy_data_up).end()) {
+//       (*obj_to_vector_of_copy_data_up)[obj_name].emplace_back
+//         (std::move(vertices), (*obj_to_data_p)[obj_name].faces);
+//     } else {
+//       vector<ObjectData> od;
+//       od.emplace_back(std::move(vertices), (*obj_to_data_p)[obj_name].faces);
+//       (*obj_to_vector_of_copy_data_up)[obj_name] = std::move(od);
+//     }
+//   }
+//   return std::move(obj_to_vector_of_copy_data_up);
+// }
+
+// TODO(jg): make_obj_copy_vec(obj_copy_info_vec_up.get(), objid_to_data_up.get())
+std::unique_ptr<std::vector<ObjectCopy>>
+SceneParser::make_obj_copy_vec(std::vector<ObjectCopyInfo> *objcpy_info_vec_p,
+                  std::map<std::string, ObjectData> *objid_to_data_p) {
   using std::vector;
+  using std::string;
+  using std::unique_ptr;
 
-  using map_s_objdatavec = map<string, vector<ObjectData>>;
+  unique_ptr<vector<ObjectCopy>> obj_copy_vec_up {new vector<ObjectCopy>()};
+  for (auto& objcpy_info : *objcpy_info_vec_p) {
+    ObjectCopy objcpy{};
+    objcpy.object_id = objcpy_info.obj_id;
+    objcpy.material.ambient_reflectance = objcpy_info.ambient_reflectance;
+    objcpy.material.diffuse_reflectance = objcpy_info.diffuse_reflectance;
+    objcpy.material.specular_reflectance = objcpy_info.specular_reflectance;
+    objcpy.material.shininess = objcpy_info.shininess;
 
-  std::unique_ptr<map_s_objdatavec> obj_to_vector_of_copy_data_up{new map_s_objdatavec};
+    auto obj_data = (*objid_to_data_p)[objcpy.object_id];
+    objcpy.vertices = obj_data.vertices;
+    objcpy.normals = obj_data.normals;
+    objcpy.faces = obj_data.faces;
 
-  for (const auto& obj_copy_info : *obj_copy_info_vec_p) {
-    auto obj_name = obj_copy_info.obj_id;
-    vector<Vertex> vertices;
-    MatrixXd transform = obj_copy_info.transform;
-    for (const auto& untransformed_vertex : (*obj_to_data_p)[obj_name].vertices) {
-      auto new_vertex = Vertex::transform_vertex(untransformed_vertex, transform);
-      vertices.push_back(new_vertex);
+    // transform vertices (-> world space)
+    for (auto& vertex : objcpy.vertices) {
+      vertex = Vertex::transform_vertex(vertex, objcpy_info.transform);
     }
-    auto it = (*obj_to_vector_of_copy_data_up).find(obj_name);
-    if (it != (*obj_to_vector_of_copy_data_up).end()) {
-      (*obj_to_vector_of_copy_data_up)[obj_name].emplace_back
-        (std::move(vertices), (*obj_to_data_p)[obj_name].faces);
-    } else {
-      vector<ObjectData> od;
-      od.emplace_back(std::move(vertices), (*obj_to_data_p)[obj_name].faces);
-      (*obj_to_vector_of_copy_data_up)[obj_name] = std::move(od);
+    
+    // transform normals
+    for (auto& normal : objcpy.normals) {
+      normal = NormalVector::transform_normal(normal,
+       (objcpy_info.transform_without_translations).inverse().transpose());
     }
+
+    obj_copy_vec_up->push_back(std::move(objcpy));
   }
-  return std::move(obj_to_vector_of_copy_data_up);
+  return std::move(obj_copy_vec_up);
 }
-
-
-
-#endif // _PARSESCENE_H_

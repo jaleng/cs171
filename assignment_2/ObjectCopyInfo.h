@@ -17,21 +17,24 @@ class ObjectCopyInfo {
   double shininess;
 
   Eigen::MatrixXd transform;
+  Eigen::MatrixXd transform_without_translations;
 
   ObjectCopyInfo(
     std::string _obj_id,
     double amb_r, double amb_g, double amb_b,
     double dif_r, double dif_g, double dif_b,
     double spc_r, double spc_g, double spc_b,
-    double shininess,
-    Eigen::MatrixXd _transform
+    double _shininess,
+    Eigen::MatrixXd _transform,
+    Eigen::MatrixXd _transform_without_translations
     )
     : obj_id{_obj_id},
       ambient_reflectance{3, 1},
       diffuse_reflectance{3, 1},
       specular_reflectance{3, 1},
       shininess{_shininess},
-      transform{_transform} {
+      transform{_transform},
+      transform_without_translations{_transform_without_translations} {
 
     ambient_reflectance(0) = amb_r;
     ambient_reflectance(1) = amb_g;
