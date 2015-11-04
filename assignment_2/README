@@ -1,0 +1,7 @@
+make
+cp shaded data
+cd data
+# For Gourard shading
+./shaded scene_kitten.txt 800 800 0 | display -&
+# For Phong shading
+./shaded scene_kitten.txt 800 800 1 | display -&
