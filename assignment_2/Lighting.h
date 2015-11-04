@@ -34,7 +34,7 @@ Color lighting(const VectorXd& point_position,
     // Attentuate the light_color
     auto distance = (point_position - cam_position).norm();
 
-    light_color *= 1.0 / (1 + light.attenuation * distance * distance);
+    light_color *= (1.0 / (1 + (light.attenuation * distance * distance)));
     auto light_position = VectorXd(3);
     light_position << light.x, light.y, light.z;
     auto light_direction = (light_position - point_position).normalized();
@@ -114,8 +114,7 @@ rasterColoredTriangle(const Face& f, const std::vector<Vertex>& vertices,
                        beta  * b_ndc.matrix() +
                        gamma * c_ndc.matrix());
           // DEBUG
-          if (v_ndc.inNDCCube())
-            if (v_ndc.z < buffer(x, y)) {
+          if (v_ndc.inNDCCube() && !(v_ndc.z > buffer(x, y))) {
             buffer(x, y) = v_ndc.z;
             Color v1_color = lighting(vertices[f.v1_idx - 1].matrix(),
                                       normals[f.v1_normal_idx - 1].matrix(),
@@ -143,18 +142,19 @@ rasterColoredTriangle(const Face& f, const std::vector<Vertex>& vertices,
             canvas.fill(x, y, c);
           }
         } else {  // Do Phong shading
-          Vertex v_ndc(alpha * a_ndc.matrix() +
-                       beta  * b_ndc.matrix() +
-                       gamma * c_ndc.matrix());
+          Vertex v_ndc((alpha * a_ndc.matrix()) +
+                       (beta  * b_ndc.matrix()) +
+                       (gamma * c_ndc.matrix()));
           if (v_ndc.inNDCCube() && !(v_ndc.z > buffer(x, y))) {
-            auto norm = Vector3d{alpha * normals[f.v1_idx - 1].matrix() +
-                                 beta  * normals[f.v2_idx - 1].matrix() +
-                                 gamma * normals[f.v3_idx - 1].matrix()};
-            auto v_world = Vector3d{alpha * vertices[f.v1_idx - 1].matrix() +
-                                    beta * vertices[f.v2_idx - 1].matrix() +
-                                    gamma * vertices[f.v3_idx - 1].matrix()};
-            auto color = lighting(v_world.matrix(),
-                                  norm.matrix(),
+            buffer(x, y) = v_ndc.z;
+            auto norm = Vector3d{(alpha * normals[f.v1_normal_idx - 1].matrix()) +
+                                 (beta  * normals[f.v2_normal_idx - 1].matrix()) +
+                                 (gamma * normals[f.v3_normal_idx - 1].matrix())};
+            auto v_world = Vector3d{(alpha * vertices[f.v1_idx - 1].matrix()) +
+                                    (beta * vertices[f.v2_idx - 1].matrix()) +
+                                    (gamma * vertices[f.v3_idx - 1].matrix())};
+            auto color = lighting(v_world,
+                                  norm,
                                   material,
                                   lights,
                                   camera.getPosition());

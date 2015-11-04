@@ -19,7 +19,10 @@ class Light {
   explicit Light(double _x, double _y, double _z,
                  double _r, double _g, double _b,
                  double k)
-    : x{_x}, y{_y}, z{_z}, r{_r}, g{_g}, b{_b}, color{_r, _g, _b} {}
+    : x{_x}, y{_y}, z{_z},
+      r{_r}, g{_g}, b{_b},
+      color{_r, _g, _b},
+      attenuation{k} {}
 };
 
 #endif // _LIGHT_H_
