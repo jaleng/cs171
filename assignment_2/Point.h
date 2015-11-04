@@ -2,7 +2,7 @@
 #define _POINT_H_
 
 class Point {
-public:
+ public:
   int x;
   int y;
   explicit Point(int _x, int _y) : x{_x}, y{_y} {}

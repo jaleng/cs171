@@ -1,6 +1,7 @@
 #ifndef _MATERIAL_H_
 #define _MATERIAL_H_
 
+/** Class to hold information about a material (reflectances, shininess). */
 class Material{
  public:
   /** Ambient material reflectance **/

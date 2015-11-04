@@ -1,4 +1,3 @@
-//ObjectCopy.h
 #ifndef _OBJECTCOPY_H_
 #define _OBJECTCOPY_H_
 
@@ -24,16 +23,6 @@ class ObjectCopy {
 
   /** Material of this ObjectCopy **/
   Material material;
-
-  // moved to Material
-  /* /\** Ambient material reflectance **\/ */
-  /* Eigen::MatrixXd ambient_reflectance; */
-  /* /\** Diffuse material reflectance **\/ */
-  /* Eigen::MatrixXd diffuse_reflectance; */
-  /* /\** Specular material reflectance **\/ */
-  /* Eigen::MatrixXd specular_reflectance; */
-  /* /\** Shininess, ie Phong exponent p **\/ */
-  /* double shininess; */
 };
 
 #endif // _OBJECTCOPY_H_ 

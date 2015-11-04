@@ -1,4 +1,3 @@
-//Scene.h
 #ifndef _SCENE_H_
 #define _SCENE_H_
 

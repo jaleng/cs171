@@ -9,7 +9,7 @@
 
 /** Class to hold data related to a camera and its transforms */
 class Camera {
-private:
+ private:
   /** Position of camera (ie translation) */
   TranslationD position;
   /** Orientation of camera (ie rotation) */
@@ -17,7 +17,7 @@ private:
   /** Perspective of camera (ie frustrum parameters) */
   Perspective perspective;
 
-public:
+ public:
   /** Camera transform */
   Eigen::MatrixXd transform;
 
@@ -36,8 +36,8 @@ public:
     : position{_position},
       orientation{_orientation},
       perspective{_perspective},
-      inverseTransform{4,4},
-      perspective_projection_matrix{4,4} {
+      inverseTransform{4, 4},
+      perspective_projection_matrix{4, 4} {
     using namespace Eigen;
 
     transform = position.matrix * orientation.matrix;
@@ -57,12 +57,14 @@ public:
       0, 0, -1, 0;
   }
 
+  /** Get a vector of the camera's position. **/
   Eigen::Vector3d getPosition() const {
     Vector3d v;
     v << position.matrix(0, 3), position.matrix(1, 3), position.matrix(2, 3);
     return v;
   }
 
+  /** Return a vertex with NDC coordinates given vertex with world coords. **/
   Vertex world2NDC(Vertex v) const {
     v = Vertex::transform_vertex(v, inverseTransform);
     v = Vertex::transform_vertex(v, perspective_projection_matrix);

@@ -22,12 +22,16 @@ class NormalVector {
     z /= magnitude;
   }
 
+  /** Return matrix with the components of the normal vector. **/
   Eigen::Vector3d matrix() const {
     Eigen::Vector3d m;
     m << x, y, z;
     return m;
   }
 
+  /** Get the resulting normal vector after transforming one.
+   *  The transform should not include translation.
+   */
   static NormalVector transform_normal(NormalVector n, Eigen::MatrixXd t) {
     using Eigen::MatrixXd;
     MatrixXd normal_matrix(4, 1);

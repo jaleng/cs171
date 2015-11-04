@@ -1,4 +1,3 @@
-// SceneParser.h
 #ifndef _SCENEPARSER_H_
 #define _SCENEPARSER_H_
 
@@ -28,7 +27,7 @@ namespace SceneParser {
 
   /** Parse object attributes. */
   std::unique_ptr<std::map<std::string, std::string>>
-    parse_obj_to_filename(std::ifstream& file_stream);
+  parse_obj_to_filename(std::ifstream& file_stream);
 
   /** Parse object data. */
   std::unique_ptr<std::map<std::string, ObjectData>>
@@ -36,20 +35,12 @@ namespace SceneParser {
 
   /** Parse object_copy attributes. */
   std::unique_ptr<std::vector<ObjectCopyInfo>>
-    parse_obj_copy_info(std::ifstream& file_stream);
+  parse_obj_copy_info(std::ifstream& file_stream);
 
-  /** Store object_copy data (with transformed vertices). */
-  /* std::unique_ptr<std::map<std::string, std::vector<ObjectData>>> */
-  /*   make_obj_to_copy_data_vec(std::vector<ObjectCopyInfo>* obj_copy_info_vec_p, */
-  /*                             std::map<std::string, ObjectData>* obj_to_data_p); */
-
-  /** TODO(jg): document */
+  /** Make a vector of ObjectCopys using object data and copy info. **/
   std::unique_ptr<std::vector<ObjectCopy>>
-    make_obj_copy_vec(std::vector<ObjectCopyInfo> *objcpy_info_vec_p,
-                      std::map<std::string, ObjectData> *objid_to_data_p);
+  make_obj_copy_vec(std::vector<ObjectCopyInfo> *objcpy_info_vec_p,
+                    std::map<std::string, ObjectData> *objid_to_data_p);
 };  // namespace SceneParser
-
-
-
 
 #endif // _SCENEPARSER_H_

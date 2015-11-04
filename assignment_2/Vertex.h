@@ -33,18 +33,17 @@ class Vertex {
     return Vertex(x, y, z);
   }
 
+  /** Return a Vector3d of the vertex coordinates. **/
   Eigen::Vector3d matrix() const {
-    using Eigen::VectorXd;
-    Vector3d m;
-    m(0) = x;
-    m(1) = y;
-    m(2) = z;
-    return m;
+    return Eigen::Vector3d(x, y, z);
   }
 
+  /** Check if all of the coords are between -1 and 1, inclusive.
+   *  "inNDCCube" only applies if vertex is in NDC coords.
+   */
   bool inNDCCube() {
     return x >= -1 && x <= 1 && y >= -1 && y <= 1 && z >= -1 && z <= 1;
   }
 };
 
-#endif // VERTEX_H_
+#endif  // VERTEX_H_

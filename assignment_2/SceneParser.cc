@@ -4,6 +4,7 @@
 
 #include "Scale.h"
 
+/** Parse a scene given a scene description file stream. **/
 std::unique_ptr<Scene> SceneParser::parse_scene(std::ifstream& scene_desc_file_stream) {
   // Parse the camera
   auto camera_up = parse_camera(scene_desc_file_stream);
@@ -315,44 +316,12 @@ SceneParser::parse_obj_to_filename(std::ifstream& file_stream) {
     line_stream >> obj_name >> file_name;
     (*obj_name_to_filename_up)[obj_name] = file_name;
   }
-  
+
   return std::move(obj_name_to_filename_up);
 }
 
-/** Store object_copy data (with transformed vertices). */
-// std::unique_ptr<std::map<std::string, std::vector<ObjectData>>>
-// SceneParser::make_obj_to_copy_data_vec(std::vector<ObjectCopyInfo>* obj_copy_info_vec_p,
-//                           std::map<std::string, ObjectData>* obj_to_data_p) {
-//   using std::map;
-//   using std::string;
-//   using std::vector;
 
-//   using map_s_objdatavec = map<string, vector<ObjectData>>;
-
-//   std::unique_ptr<map_s_objdatavec> obj_to_vector_of_copy_data_up{new map_s_objdatavec};
-
-//   for (const auto& obj_copy_info : *obj_copy_info_vec_p) {
-//     auto obj_name = obj_copy_info.obj_id;
-//     vector<Vertex> vertices;
-//     MatrixXd transform = obj_copy_info.transform;
-//     for (const auto& untransformed_vertex : (*obj_to_data_p)[obj_name].vertices) {
-//       auto new_vertex = Vertex::transform_vertex(untransformed_vertex, transform);
-//       vertices.push_back(new_vertex);
-//     }
-//     auto it = (*obj_to_vector_of_copy_data_up).find(obj_name);
-//     if (it != (*obj_to_vector_of_copy_data_up).end()) {
-//       (*obj_to_vector_of_copy_data_up)[obj_name].emplace_back
-//         (std::move(vertices), (*obj_to_data_p)[obj_name].faces);
-//     } else {
-//       vector<ObjectData> od;
-//       od.emplace_back(std::move(vertices), (*obj_to_data_p)[obj_name].faces);
-//       (*obj_to_vector_of_copy_data_up)[obj_name] = std::move(od);
-//     }
-//   }
-//   return std::move(obj_to_vector_of_copy_data_up);
-// }
-
-// TODO(jg): make_obj_copy_vec(obj_copy_info_vec_up.get(), objid_to_data_up.get())
+/** Make a vector of ObjectCopys using object data and copy info. **/
 std::unique_ptr<std::vector<ObjectCopy>>
 SceneParser::make_obj_copy_vec(std::vector<ObjectCopyInfo> *objcpy_info_vec_p,
                   std::map<std::string, ObjectData> *objid_to_data_p) {
@@ -378,7 +347,7 @@ SceneParser::make_obj_copy_vec(std::vector<ObjectCopyInfo> *objcpy_info_vec_p,
     for (auto& vertex : objcpy.vertices) {
       vertex = Vertex::transform_vertex(vertex, objcpy_info.transform);
     }
-    
+
     // transform normals
     for (auto& normal : objcpy.normals) {
       normal = NormalVector::transform_normal(normal,

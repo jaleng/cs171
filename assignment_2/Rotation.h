@@ -10,15 +10,16 @@ using Eigen::MatrixXd;
  */
 template<typename T>
 class RotationGeneral {
-public:
+ public:
   MatrixXd matrix;
   explicit RotationGeneral(T rx, T ry, T rz, T theta)
     : matrix{4, 4} {
     rotation_vals_to_matrix(matrix, rx, ry, rz, theta);
-  }; 
+  };
 
   /** Make a transformation matrix from rotation parameters. */
-  static void rotation_vals_to_matrix(MatrixXd& matrix, T rx, T ry, T rz, T theta) {
+  static void rotation_vals_to_matrix(MatrixXd& matrix,
+                                      T rx, T ry, T rz, T theta) {
     // Normalize
     T length = sqrt(rx * rx + ry * ry + rz * rz);
     rx /= length;
@@ -40,7 +41,7 @@ public:
       rx_ry * omct + rz * st, ry2 + (1 - ry2) * ct, ry_rz * omct - rx * st, 0,
       rx_rz * omct - ry * st, ry_rz * omct + rx * st, rz2 + (1 - rz2) * ct, 0,
       0, 0, 0, 1;
-  };
+  }
 };
 
 using RotationD = RotationGeneral<double>;

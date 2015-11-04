@@ -1,6 +1,9 @@
+#ifndef _PERSPECTIVE_H_
+#define _PERSPECTIVE_H_
+
 /** Class to hold perspective info (frustrum parameters) */
 class Perspective {
-public:
+ public:
   double near;
   double far;
   double top;
@@ -18,3 +21,5 @@ public:
       left{_left},
       right{_right} {}
 };
+
+#endif  // _PERSPECTIVE_H_

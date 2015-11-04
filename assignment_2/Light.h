@@ -4,6 +4,7 @@
 
 #include "Color.h"
 
+/** Class to hold light information (position, color, attenuation) */
 class Light {
  public:
   /** Coordinates of point light **/

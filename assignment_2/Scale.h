@@ -10,12 +10,14 @@ template<typename T>
 class ScaleGeneral {
  public:
   Eigen::MatrixXd matrix;
+
+  // ctor
   explicit ScaleGeneral(T sx, T sy, T sz)
     : matrix{4, 4} {
     scale_vals_to_matrix(matrix, sx, sy, sz);
   };
 
-  /** Turn scaling parameters into a transformation matrix. */
+  /** Turn scaling parameters into a transformation matrix. **/
   static void scale_vals_to_matrix(Eigen::MatrixXd& matrix, T sx, T sy, T sz) {
     matrix <<
       sx, 0,  0,  0,

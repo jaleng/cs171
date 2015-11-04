@@ -37,9 +37,6 @@ int main(int argc, char *argv[]) {
 
   int mode_int = atoi(argv[4]);
   assert(mode_int == 0 || mode_int == 1);
-  // enum class ShadingMode {GOURAUD, PHONG};
-  // ShadingMode shading_mode = mode_int == 0 ?
-  //   ShadingMode::GOURAUD : ShadingMode::PHONG;
 
   // Parse scene description file
   auto scene = SceneParser::parse_scene(scene_desc_file_stream);
@@ -60,14 +57,6 @@ int main(int argc, char *argv[]) {
                             mode_int);
     }
   }
-
-  // DEBUG CANVAS
-  // auto debug_canvas = Canvas{800, 800};
-  // for (int i = 200; i <= 400; ++i) {
-  //   for (int j = 200; j <= 400; ++j) {
-  //     debug_canvas.fill(i, j, Color{1, 0, 0});
-  //   }
-  // }
 
   // output to ppm
   ppm_to_stdout(canvas);

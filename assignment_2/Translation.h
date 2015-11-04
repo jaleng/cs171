@@ -10,12 +10,12 @@ using namespace Eigen;
  */
 template<typename T>
 class TranslationGeneral {
-public:
+ public:
   MatrixXd matrix;
   explicit TranslationGeneral(T tx, T ty, T tz)
     : matrix{4, 4} {
     translation_vals_to_matrix(matrix, tx, ty, tz);
-  }; 
+  };
 
   /** Make a transformation matrix from translation parameters. */
   static void translation_vals_to_matrix(MatrixXd& matrix, T tx, T ty, T tz) {
