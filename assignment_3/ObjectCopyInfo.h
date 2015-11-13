@@ -11,18 +11,18 @@ class ObjectCopyInfo {
  public:
   std::string obj_id;
 
-  float ambient_reflectance[3];
-  float diffuse_reflectance[3];
-  float specular_reflectance[3];
-  float shininess;
+  double ambient_reflectance[3];
+  double diffuse_reflectance[3];
+  double specular_reflectance[3];
+  double shininess;
 
   std::vector<Transform> transforms;
 
   ObjectCopyInfo(std::string _obj_id,
-                 float amb_r, float amb_g, float amb_b,
-                 float dif_r, float dif_g, float dif_b,
-                 float spc_r, float spc_g, float spc_b,
-                 float _shininess,
+                 double amb_r, double amb_g, double amb_b,
+                 double dif_r, double dif_g, double dif_b,
+                 double spc_r, double spc_g, double spc_b,
+                 double _shininess,
                  std::vector<Transform> _transforms)
     : obj_id{_obj_id},
       ambient_reflectance{amb_r, amb_g, amb_b},

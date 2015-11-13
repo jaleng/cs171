@@ -3,21 +3,21 @@
 
 class Quaternion {
  private:
-  float s, x, y, z;
+  double s, x, y, z;
  public:
   Quaternion() : s{1}, x{0}, y{0}, z{0} {}
-  Quaternion(float _s, float _x, float _y, float _z)
+  Quaternion(double _s, double _x, double _y, double _z)
     : s{_s}, x{_x}, y{_y}, z{_z} {}
 
-  float vdot(const Quaternion& q) const {
+  double vdot(const Quaternion& q) const {
     return x * q.x + y * q.y + z* q.z;
   }
 
   void operator*=(const Quaternion& q) {
-    float new_s = s * q.s - this->vdot(q);
-    float new_x = s * q.x + q.s * x + (y * q.z - z * q.y);
-    float new_y = s * q.y + q.s * y + (z * q.x - x * q.z);
-    float new_z = s * q.z + q.s * z + (x * q.y - y * q.x);
+    double new_s = s * q.s - this->vdot(q);
+    double new_x = s * q.x + q.s * x + (y * q.z - z * q.y);
+    double new_y = s * q.y + q.s * y + (z * q.x - x * q.z);
+    double new_z = s * q.z + q.s * z + (x * q.y - y * q.x);
 
     s = new_s;
     x = new_x;
@@ -31,8 +31,8 @@ class Quaternion {
     return copy;
   }
 
-  std::array<float, 16> getRotationMatrix() {
-    std::array<float, 16> m;
+  std::array<double, 16> getRotationMatrix() {
+    std::array<double, 16> m;
     // 1st col
     m[0] = 1 - 2*y*y - 2*z*z;
     m[1] = 2 * (x*y + z*s);

@@ -2,12 +2,12 @@
 #define TRIPLE_H_
 
 struct Triple {
-  float x;
-  float y;
-  float z;
+  double x;
+  double y;
+  double z;
 
   // ctor
-  Triple(float _x, float _y, float _z)
+  Triple(double _x, double _y, double _z)
   : x{_x}, y{_y}, z{_z} {}
 };
 

@@ -11,10 +11,10 @@ struct Object {
   std::vector<Triple> vertex_buffer;
   std::vector<Triple> normal_buffer;
   std::vector<Transform> transforms;
-  float ambient_reflect[3];
-  float diffuse_reflect[3];
-  float specular_reflect[3];
-  float shininess;
+  double ambient_reflect[3];
+  double diffuse_reflect[3];
+  double specular_reflect[3];
+  double shininess;
 };
 
 #endif  // OBJECT_H_

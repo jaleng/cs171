@@ -29,17 +29,17 @@ void draw_objects();
 void mouse_pressed(int button, int state, int x, int y);
 void mouse_moved(int x, int y);
 void key_pressed(unsigned char key, int x, int y);
-float deg2rad(float angle);
-float rad2deg(float angle);
+double deg2rad(double angle);
+double rad2deg(double angle);
 
-float cam_position[3];
-float cam_orientation_axis[3];
+double cam_position[3];
+double cam_orientation_axis[3];
 
 /* Angle in degrees.
  */ 
-float cam_orientation_angle;
+double cam_orientation_angle;
 
-float near_param, far_param,
+double near_param, far_param,
       left_param, right_param,
       top_param, bottom_param;
 
@@ -325,7 +325,7 @@ void display(void) {
      * Our next step is to specify the inverse rotation of the camera by its
      * orientation angle about its orientation axis:
      */
-    glRotatef(-cam_orientation_angle,
+    glRotated(-cam_orientation_angle,
               cam_orientation_axis[0], cam_orientation_axis[1], cam_orientation_axis[2]);
     /* We then specify the inverse translation of the camera by its position using
      * the 'glTranslatef' function, which takes the following parameters in the
@@ -335,7 +335,7 @@ void display(void) {
      * - float y: x-component of translation vector
      * - float z: x-component of translation vector
      */
-    glTranslatef(-cam_position[0], -cam_position[1], -cam_position[2]);
+    glTranslated(-cam_position[0], -cam_position[1], -cam_position[2]);
     /* ^ And that should be it for the camera transformations.
      */
 
@@ -435,9 +435,14 @@ void init_lights() {
          * are used to only working with one overall light color, we will
          * just set every component to the light color.
          */
-        glLightfv(light_id, GL_AMBIENT, lights[i].color);
-        glLightfv(light_id, GL_DIFFUSE, lights[i].color);
-        glLightfv(light_id, GL_SPECULAR, lights[i].color);
+        std::array<float, 3> color;
+        for (int j = 0; j < 3; ++j) {
+          color[j] = static_cast<float>(lights[i].color[j]);
+        }
+
+        glLightfv(light_id, GL_AMBIENT, &color[0]);
+        glLightfv(light_id, GL_DIFFUSE, &color[0]);
+        glLightfv(light_id, GL_SPECULAR, &color[0]);
         
         /* The following line of code sets the attenuation k constant of the
          * light. The difference between 'glLightf' and 'glLightfv' is that
@@ -446,7 +451,7 @@ void init_lights() {
          * parameter is a set of values like a color array. i.e. the third
          * parameter of 'glLightf' is just a float instead of a float*.
          */
-        glLightf(light_id, GL_QUADRATIC_ATTENUATION, lights[i].attenuation_k);
+        glLightf(light_id, GL_QUADRATIC_ATTENUATION, static_cast<float>(lights[i].attenuation_k));
     }
 }
 
@@ -455,7 +460,11 @@ void set_lights() {
 
   for (int i = 0; i < num_lights; ++i) {
     int light_id = GL_LIGHT0 + i;
-    glLightfv(light_id, GL_POSITION, lights[i].position);
+    std::array<float, 3> position;
+    for (int j = 0; j < 3; ++j) {
+      position[j] = lights[i].position[j];
+    }
+    glLightfv(light_id, GL_POSITION, &position[0]);
   }
 }
 
@@ -494,18 +503,18 @@ void draw_objects() {
           it != objects[i].transforms.crend(); ++it) {
         switch (it->transform_type) {
         case TransformType::TRANSLATION:
-          glTranslatef((*it).translation[0],
+          glTranslated((*it).translation[0],
                        (*it).translation[1],
                        (*it).translation[2]);
           break;
         case TransformType::ROTATION:
-          glRotatef(rad2deg((*it).rotation_angle),
+          glRotated(rad2deg((*it).rotation_angle),
                     (*it).rotation[0],
                     (*it).rotation[1],
                     (*it).rotation[2]);
           break;
         case TransformType::SCALING:
-          glScalef((*it).scaling[0],
+          glScaled((*it).scaling[0],
                    (*it).scaling[1],
                    (*it).scaling[2]);
           break;
@@ -513,7 +522,7 @@ void draw_objects() {
       }
 
       // Arcball rotation
-      glMultMatrixf(&arcball_matrix[0]);
+      glMultMatrixd(&arcball_matrix[0]);
       
       /* The 'glMaterialfv' and 'glMaterialf' functions tell OpenGL
        * the material properties of the surface we want to render.
@@ -531,10 +540,19 @@ void draw_objects() {
        * parameter is only a single float value instead of an array of
        * values. 'glMaterialf' is used to set the shininess property.
        */
-      glMaterialfv(GL_FRONT, GL_AMBIENT, objects[i].ambient_reflect);
-      glMaterialfv(GL_FRONT, GL_DIFFUSE, objects[i].diffuse_reflect);
-      glMaterialfv(GL_FRONT, GL_SPECULAR, objects[i].specular_reflect);
-      glMaterialf(GL_FRONT, GL_SHININESS, objects[i].shininess);
+      std::array<float, 3> ambient_reflect;
+      std::array<float, 3> diffuse_reflect;
+      std::array<float, 3> specular_reflect;
+
+      for (int j = 0; j < 3; ++j) {
+        ambient_reflect[j] = static_cast<float>(objects[i].ambient_reflect[j]);
+        diffuse_reflect[j] = static_cast<float>(objects[i].diffuse_reflect[j]);
+        specular_reflect[j] = static_cast<float>(objects[i].specular_reflect[j]);
+      }
+      glMaterialfv(GL_FRONT, GL_AMBIENT, &ambient_reflect[0]);
+      glMaterialfv(GL_FRONT, GL_DIFFUSE, &diffuse_reflect[0]);
+      glMaterialfv(GL_FRONT, GL_SPECULAR, &specular_reflect[0]);
+      glMaterialf(GL_FRONT, GL_SHININESS, static_cast<float>(objects[i].shininess));
 
       /* The next few lines of code are how we tell OpenGL to render
        * geometry for us. First, let us look at the 'glVertexPointer'
@@ -584,7 +602,7 @@ void draw_objects() {
        * - void* pointer_to_array: this parameter is the pointer to
        *                           our vertex array.
        */
-      glVertexPointer(3, GL_FLOAT, 0, &objects[i].vertex_buffer[0]);
+      glVertexPointer(3, GL_DOUBLE, 0, &objects[i].vertex_buffer[0]);
       /* The "normal array" is the equivalent array for normals.
        * Each normal in the normal array corresponds to the vertex
        * of the same index in the vertex array.
@@ -595,7 +613,7 @@ void draw_objects() {
        * - sizei stride: same as the stride parameter in 'glVertexPointer'
        * - void* pointer_to_array: the pointer to the normal array
        */
-      glNormalPointer(GL_FLOAT, 0, &objects[i].normal_buffer[0]);
+      glNormalPointer(GL_DOUBLE, 0, &objects[i].normal_buffer[0]);
 
       int buffer_size = objects[i].vertex_buffer.size();
             
@@ -803,11 +821,11 @@ void key_pressed(unsigned char key, int x, int y) {
   }
 }
 
-float deg2rad(float angle) {
+double deg2rad(double angle) {
   return angle * M_PI / 180.0;
 }
 
-float rad2deg(float angle) {
+double rad2deg(double angle) {
   return angle * 180.0 / M_PI;
 }
 

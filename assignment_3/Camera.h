@@ -2,16 +2,16 @@
 #define CAMERA_H_
 
 struct Camera {
-  float position[3];
-  float orientation_axis[3];
-  float orientation_angle;
-  float near, far, left, right, top, bottom;
+  double position[3];
+  double orientation_axis[3];
+  double orientation_angle;
+  double near, far, left, right, top, bottom;
 
-  Camera(float px, float py, float pz,
-         float ox, float oy, float oz, float angle,
-         float _near, float _far,
-         float _left, float _right,
-         float _top, float _bottom)
+  Camera(double px, double py, double pz,
+         double ox, double oy, double oz, double angle,
+         double _near, double _far,
+         double _left, double _right,
+         double _top, double _bottom)
   : position {px, py, pz},
     orientation_axis {ox, oy, oz},
     orientation_angle {angle},

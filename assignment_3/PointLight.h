@@ -2,14 +2,14 @@
 #define POINTLIGHT_H_
 
 struct PointLight {
-  float position[4];
-  float color[3];
-  float attenuation_k;
+  double position[4];
+  double color[3];
+  double attenuation_k;
 
   // ctor
-  PointLight(float x, float y, float z,
-             float r, float g, float b,
-             float k)
+  PointLight(double x, double y, double z,
+             double r, double g, double b,
+             double k)
   : position {x, y, z, 1},
     color {r, g, b},
     attenuation_k {k} {}
