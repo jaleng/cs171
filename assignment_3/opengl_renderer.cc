@@ -349,10 +349,6 @@ void display(void) {
      */
     set_lights();
 
-    /// ARCBALL
-    auto arcball_matrix = (current_rotation * last_rotation).getRotationMatrix();
-    glMultMatrixf(&arcball_matrix[0]);
-
     ///
     /* Once the lights are set, we can specify the points and faces that we
      * want drawn. We do all this in our 'draw_objects' helper function. See
@@ -464,6 +460,9 @@ void set_lights() {
 }
 
 void draw_objects() {
+
+  /// ARCBALL
+  auto arcball_matrix = (current_rotation * last_rotation).getRotationMatrix();
   int num_objects = objects.size();
 
   for (int i = 0; i < num_objects; ++i) {
@@ -512,6 +511,10 @@ void draw_objects() {
           break;
         }
       }
+
+      // Arcball rotation
+      glMultMatrixf(&arcball_matrix[0]);
+      
       /* The 'glMaterialfv' and 'glMaterialf' functions tell OpenGL
        * the material properties of the surface we want to render.
        * The parameters for 'glMaterialfv' are (in the following order):
