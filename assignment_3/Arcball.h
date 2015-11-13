@@ -3,17 +3,21 @@
 
 #include <algorithm>
 
+/** Arcball related functions **/
 namespace ArcBall {
+  /** Compute z given ndc x, y coords **/
   double compute_z(double x, double y) {
     double xx = x*x;
     double yy = y*y;
     return (xx + yy <= 1) ? sqrt(1 - xx - yy) : 0;
   }
 
+  /** Find norm of (x,y,z) vector **/
   constexpr double norm(double x, double y, double z) {
     return sqrt(x*x+y*y+z*z);
   }
 
+  /** Compute angle of rotation given old and new ndc coords **/
   double compute_theta(double xnew, double ynew, double znew,
                       double xold, double yold, double zold) {
     return acos(std::min(double(1),
@@ -21,6 +25,7 @@ namespace ArcBall {
                            (norm(xnew, ynew, znew) * norm(xold, yold, zold))));
   }
 
+  /** Set unit vector of axis of rotation **/
   void setU(double& ux, double& uy, double& uz,
             double xnew, double ynew, double znew,
             double xold, double yold, double zold) {
@@ -34,6 +39,7 @@ namespace ArcBall {
     uz /= size;
   }
 
+  /** Compute rotation quaternion given ndc coords **/
   Quaternion compute_rotation_quaternion(double xc, double yc, double xs, double ys) {
     auto zc = compute_z(xc, yc);
     auto zs = compute_z(xs, ys);
@@ -44,17 +50,24 @@ namespace ArcBall {
     return Quaternion(cos(to2), ux * sin(to2), uy * sin(to2), uz * sin(to2));
   }
 
+  /** Compute rotation quaternion given screen coords, screen width and height **/
   Quaternion compute_rotation_quaternion(int xc, int yc, int xs, int ys,
                                          int width, int height) {
-    double xcf = (double(xc) - double(width)/2) / (double(width)/2);
-    double ycf = (double(yc) - double(height)/2) / (double(height)/2);
-    double xsf = (double(xs) - double(width)/2) / (double(width)/2);
-    double ysf = (double(ys) - double(height)/2) / (double(height)/2);
+    auto xcd = static_cast<double>(xc);
+    auto ycd = static_cast<double>(yc);
+    auto xsd = static_cast<double>(xs);
+    auto ysd = static_cast<double>(ys);
+    auto widthd = static_cast<double>(width);
+    auto heightd = static_cast<double>(height);
 
-    return compute_rotation_quaternion(xcf, -ycf, xsf, -ysf);
+    auto xc_ndc = (xcd - widthd/2) / (widthd/2);
+    auto yc_ndc = (ycd - heightd/2) / (heightd/2);
+    auto xs_ndc = (xsd - widthd/2) / (widthd/2);
+    auto ys_ndc = (ysd - heightd/2) / (heightd/2);
+
+    return compute_rotation_quaternion(xc_ndc, -yc_ndc, xs_ndc, -ys_ndc);
   }
 
 }  // namespace ArcBall
-
 
 #endif  // ARCBALL_H_

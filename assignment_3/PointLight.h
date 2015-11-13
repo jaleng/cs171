@@ -1,6 +1,7 @@
 #ifndef POINTLIGHT_H_
 #define POINTLIGHT_H_
 
+/** Class for info of a point light **/
 struct PointLight {
   double position[4];
   double color[3];

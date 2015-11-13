@@ -1,10 +1,10 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <math.h>
-#define _USE_MATH_DEFINES
 
 #include "SceneParser.h"
 #include "PointLight.h"
@@ -12,9 +12,7 @@
 #include "Quaternion.h"
 #include "Arcball.h"
 
-// DEBUG
-template class std::unique_ptr<Scene>;
-// ENDEBUG
+#define _USE_MATH_DEFINES
 
 /** Point lights to be used in the scene **/
 std::vector<PointLight> lights;
@@ -58,7 +56,7 @@ Quaternion current_rotation;
 bool is_pressed = false;
 bool wireframe_mode = false;
 
-
+/** Initialization of gl, lights, arcball rotation **/
 void init() {
   // Use Gouraud shading
   glShadeModel(GL_SMOOTH);
@@ -95,6 +93,7 @@ void init() {
   current_rotation = Quaternion::identity();
 }
 
+/** Called when gl window is resized **/
 void reshape(int width, int height) {
   // Prevent width, height from being 0 to prevent DIVIDE_BY_ZERO
   height = (height == 0) ? 1 : height;
@@ -103,6 +102,7 @@ void reshape(int width, int height) {
   glutPostRedisplay();
 }
 
+/** Display objects on gl window **/
 void display(void) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
@@ -126,6 +126,7 @@ void display(void) {
   glutSwapBuffers();
 }
 
+/** Initialize GL lights **/
 void init_lights() {
   glEnable(GL_LIGHTING);
 
@@ -149,6 +150,7 @@ void init_lights() {
   }
 }
 
+/** Set light positions **/
 void set_lights() {
   int num_lights = lights.size();
 
@@ -162,6 +164,7 @@ void set_lights() {
   }
 }
 
+/** Draw objects **/
 void draw_objects() {
   int num_objects = objects.size();
 
@@ -224,6 +227,7 @@ void draw_objects() {
   }
 }
 
+/** Called when mouse is pressed **/
 void mouse_pressed(int button, int state, int x, int y) {
   // If the left-mouse button was clicked down, then...
   if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
@@ -247,6 +251,7 @@ void mouse_pressed(int button, int state, int x, int y) {
   }
 }
 
+/** Called when mouse is moved **/
 void mouse_moved(int x, int y) {
   // If the left-mouse button is being clicked down...
   if (is_pressed) {
@@ -265,6 +270,7 @@ void mouse_moved(int x, int y) {
   }
 }
 
+/** Called when key is pressed **/
 void key_pressed(unsigned char key, int x, int y) {
   // If 'q' is pressed, quit the program.
   if (key == 'q') {
@@ -282,31 +288,17 @@ void key_pressed(unsigned char key, int x, int y) {
   }
 }
 
+/** Convert angle values from degrees to radians **/
 double deg2rad(double angle) {
   return angle * M_PI / 180.0;
 }
 
+/** Convert angle values from radians to degrees **/
 double rad2deg(double angle) {
   return angle * 180.0 / M_PI;
 }
 
-void reshape(int width, int height, const Camera& c) {
-  /* The following two lines of code prevent the width and height of the
-   * window from ever becoming 0 to prevent divide by 0 errors later.
-   * Typically, we let 1x1 square pixel be the smallest size for the window.
-   */
-  height = (height == 0) ? 1 : height;
-  width = (width == 0) ? 1 : width;
-
-  // Reset global width and height vars for arcball calculations
-  window_width = width;
-  window_height = height;
-
-  glViewport(0, 0, width, height);
-
-  glutPostRedisplay();
-}
-
+/** Parse and display a scene with the given window resolution **/
 int main(int argc, char *argv[]) {
   // Get cli args:
   // ./opengl_renderer [scene_description_file.txt] [xres] [yres] [mode]
@@ -337,7 +329,7 @@ int main(int argc, char *argv[]) {
   top_param    = scene->camera_up->top;
   bottom_param = scene->camera_up->bottom;
 
-
+  // Do GL stuff
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
   glutInitWindowSize(xres, yres);

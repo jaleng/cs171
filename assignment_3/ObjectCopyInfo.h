@@ -9,15 +9,20 @@
  */
 class ObjectCopyInfo {
  public:
+  /** Object name (what kind of obj is this a copy of?) **/
   std::string obj_id;
 
+  /** Material parameters **/
   double ambient_reflectance[3];
   double diffuse_reflectance[3];
   double specular_reflectance[3];
   double shininess;
 
+  /** Transformations, in order that they should be applied **/
   std::vector<Transform> transforms;
 
+  //// ctor
+  /** Make an ObjectCopyInfo by passing in all of the data members **/
   ObjectCopyInfo(std::string _obj_id,
                  double amb_r, double amb_g, double amb_b,
                  double dif_r, double dif_g, double dif_b,

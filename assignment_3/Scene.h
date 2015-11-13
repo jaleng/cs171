@@ -11,13 +11,17 @@
 #include "ObjectData.h"
 #include "PointLight.h"
 
+/** Hold scene info (camera, lights, objects and their transforms) **/
 class Scene {
  public:
+  // Scene object has ownership of its camera, lights, objects, etc.
+
   std::unique_ptr<Camera> camera_up;
   std::unique_ptr<std::vector<PointLight>> lights_up;
   std::unique_ptr<std::map<std::string, ObjectData>> objid_to_data_up;
   std::unique_ptr<std::vector<Object>> objects_up;
 
+  //// ctor
   Scene(
         std::unique_ptr<Camera> _camera_up,
         std::unique_ptr<std::vector<PointLight>> _lights_up,

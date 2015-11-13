@@ -2,18 +2,21 @@
 #define FACE_H_
 
 /**
- * Hold the indices of the vertices that define a face.
+ * Hold the indices of the vertices and normals that define a face.
  */
 class Face {
-public:
+ public:
+  // vertex indices (1-indexed)
   int v1_idx;
   int v2_idx;
   int v3_idx;
 
+  // normal indices (1-indexed)
   int v1_normal_idx;
   int v2_normal_idx;
   int v3_normal_idx;
 
+  //// ctor
   explicit Face(int _v1_idx, int _v2_idx, int _v3_idx,
                 int _v1_normal_idx, int _v2_normal_idx, int _v3_normal_idx)
     : v1_idx{_v1_idx},

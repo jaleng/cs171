@@ -16,6 +16,7 @@
 #include "Object.h"
 #include "ObjectCopyInfo.h"
 
+/** Functions for parsing scenes **/
 namespace SceneParser {
   /** Parse a scene **/
   std::unique_ptr<Scene> parse_scene(std::ifstream& scene_desc_file_stream);
