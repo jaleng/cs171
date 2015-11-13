@@ -113,11 +113,12 @@ void display(void) {
             cam_orientation_axis[0], cam_orientation_axis[1], cam_orientation_axis[2]);
   glTranslated(-cam_position[0], -cam_position[1], -cam_position[2]);
 
-  set_lights();
 
   // Arcball rotation
   auto arcball_matrix = (current_rotation * last_rotation).getRotationMatrix();
   glMultMatrixd(&arcball_matrix[0]);
+
+  set_lights();
 
   draw_objects();
 
