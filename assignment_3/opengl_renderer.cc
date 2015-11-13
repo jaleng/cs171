@@ -339,11 +339,6 @@ void display(void) {
     /* ^ And that should be it for the camera transformations.
      */
 
-    /// ARCBALL
-    auto arcball_matrix = (current_rotation * last_rotation).getRotationMatrix();
-    glMultMatrixf(&arcball_matrix[0]);
-
-    ///
     
     /* Our next step is to set up all the lights in their specified positions.
      * Our helper function, 'set_lights' does this for us. See the function
@@ -353,6 +348,12 @@ void display(void) {
      * the code more organized.
      */
     set_lights();
+
+    /// ARCBALL
+    auto arcball_matrix = (current_rotation * last_rotation).getRotationMatrix();
+    glMultMatrixf(&arcball_matrix[0]);
+
+    ///
     /* Once the lights are set, we can specify the points and faces that we
      * want drawn. We do all this in our 'draw_objects' helper function. See
      * the function for more details.
