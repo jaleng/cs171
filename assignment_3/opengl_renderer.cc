@@ -98,6 +98,9 @@ void reshape(int width, int height) {
   // Prevent width, height from being 0 to prevent DIVIDE_BY_ZERO
   height = (height == 0) ? 1 : height;
   width = (width == 0) ? 1 : width;
+
+  window_width = width;
+  window_height = height;
   glViewport(0, 0, width, height);
   glutPostRedisplay();
 }
@@ -112,7 +115,6 @@ void display(void) {
   glRotated(-cam_orientation_angle,
             cam_orientation_axis[0], cam_orientation_axis[1], cam_orientation_axis[2]);
   glTranslated(-cam_position[0], -cam_position[1], -cam_position[2]);
-
 
   // Arcball rotation
   auto arcball_matrix = (current_rotation * last_rotation).getRotationMatrix();
@@ -156,10 +158,11 @@ void set_lights() {
 
   for (int i = 0; i < num_lights; ++i) {
     int light_id = GL_LIGHT0 + i;
-    std::array<float, 3> position;
+    std::array<float, 4> position;
     for (int j = 0; j < 3; ++j) {
       position[j] = lights[i].position[j];
     }
+    position[3] = 1;
     glLightfv(light_id, GL_POSITION, &position[0]);
   }
 }
