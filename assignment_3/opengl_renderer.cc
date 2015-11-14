@@ -159,10 +159,9 @@ void set_lights() {
   for (int i = 0; i < num_lights; ++i) {
     int light_id = GL_LIGHT0 + i;
     std::array<float, 4> position;
-    for (int j = 0; j < 3; ++j) {
+    for (int j = 0; j < 4; ++j) {
       position[j] = lights[i].position[j];
     }
-    position[3] = 1;
     glLightfv(light_id, GL_POSITION, &position[0]);
   }
 }
