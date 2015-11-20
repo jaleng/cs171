@@ -155,37 +155,16 @@ SceneParser::make_obj_to_data(const std::map<std::string, std::string>* obj_name
         line_stream >> x >> y >> z;
         vertices.emplace_back(x, y, z);
       } else if (token == "vn") {
+        // TODO(jg): no more normals being read in, obsolete code
         double x, y, z;
         line_stream >> x >> y >> z;
         normals.emplace_back(x, y, z);
       } else if (token == "f") {
-        int v1, v2, v3;
-        int v1_normal, v2_normal, v3_normal;
-        string v_and_norm;
-        size_t separator_idx;
-
-        line_stream >> v_and_norm;
-        separator_idx = v_and_norm.find("//");
-        v_and_norm[separator_idx] = ' ';
-        v_and_norm[separator_idx + 1] = ' ';
-        stringstream vstream1{v_and_norm};
-        vstream1 >> v1 >> v1_normal;
-
-        line_stream >> v_and_norm;
-        separator_idx = v_and_norm.find("//");
-        v_and_norm[separator_idx] = ' ';
-        v_and_norm[separator_idx + 1] = ' ';
-        stringstream vstream2{v_and_norm};
-        vstream2 >> v2 >> v2_normal;
-
-        line_stream >> v_and_norm;
-        separator_idx = v_and_norm.find("//");
-        v_and_norm[separator_idx] = ' ';
-        v_and_norm[separator_idx + 1] = ' ';
-        stringstream vstream3{v_and_norm};
-        vstream3 >> v3 >> v3_normal;
-
-        faces.emplace_back(v1, v2, v3, v1_normal, v2_normal, v3_normal);
+        int idx1, idx2, idx3;
+        line_stream >> idx1 >> idx2 >> idx3;
+        // Setting normal indices to 0 to indicate no norms given
+        // and still use previous code
+        faces.emplace_back(idx1, idx2, idx3, 0, 0, 0);
       }
     }
     ObjectData obj_data{std::move(vertices), std::move(normals), std::move(faces)};
