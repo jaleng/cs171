@@ -294,7 +294,7 @@ static bool build_HE(Mesh_Data *mesh,
                      std::vector<HEF*> *hefs)
 {
     std::vector<Vertex*> *vertices = mesh->vertices;
-    std::vector<Face*> *faces = mesh->faces;
+    std::vector<FaceforHE*> *faces = mesh->faces;
 
     hevs->push_back(NULL);
     std::map<std::pair<int, int>, HE*> edge_hash;
@@ -317,7 +317,7 @@ static bool build_HE(Mesh_Data *mesh,
     
     for (int i = 0; i < num_faces; ++i)
     {
-        Face *f = faces->at(i);
+        FaceforHE *f = faces->at(i);
 
         HE *e1 = new HE;
         HE *e2 = new HE;
