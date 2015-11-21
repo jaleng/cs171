@@ -348,6 +348,14 @@ int main(int argc, char *argv[]) {
     pfaces_for_HE_build.push_back(&f);
   }
 
+  // TODO: build half edges
+  mesh_data->vertices = &pvertices_for_HE_build;
+  mesh_data->faces = &pfaces_for_HE_build;
+  auto hevs = new std::vector<HEV*>();
+  auto hefs = new std::vector<HEF*>();
+  build_HE(mesh_data.get(), hevs, hefs);
+  
+
   // TODO(jg): compute normals
 
   objects = *(scene->objects_up);
