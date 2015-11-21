@@ -315,6 +315,38 @@ int main(int argc, char *argv[]) {
   // Parse the scene description file
   auto scene = SceneParser::parse_scene(scene_desc_file_stream);
 
+
+  /** Make half edges **/
+
+  auto mesh_data = std::make_unique<Mesh_Data>();
+  // TODO: get the ObjectData
+  auto obj_data = scene->objid_to_data_up->begin()->second;
+  // TODO: make std::vector<Vertex*> *vertices for mesh
+  std::vector<Vertex> vertices_for_HE_build();
+  for (const auto& triple : obj_data.vertices) {
+    vertices_for_HE_build.emplace_back(static_cast<float>(triple.x),
+                                       static_cast<float>(triple.y),
+                                       static_cast<float>(triple.z));
+  }
+  std::vector<Vertex*> pvertices_for_HE_build();
+  // Prep for 1-indexing
+  pvertices_for_HE_build.push_back(nullptr);
+  for (const auto& v : vertices_for_HE_build) {
+    pvertices_for_HE_build.push_back(&v);
+  }
+
+  // TODO: make std::vector<FaceforHE*> *faces
+  std::vector<FaceforHE> faces_for_HE_build();
+  for (const auto& f : obj_data.faces) {
+    faces_for_HE_build.emplace_back(f.v1_idx, f.v2_idx, f.v3_idx);
+  }
+  std::vector<FaceforHE*> pfaces_for_HE_build();
+  for (const auto& f : faces_for_HE_build) {
+    pfaces_for_HE_build.push_back(&f);
+  }
+
+  // TODO(jg): compute normals
+
   objects = *(scene->objects_up);
   lights = *(scene->lights_up);
 
