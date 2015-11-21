@@ -18,8 +18,8 @@ struct Vertex
 struct FaceforHE
 {
     int idx1, idx2, idx3;
-  FaceforHE(int idx1, int idx2, int idx3)
-  : idx1{i1}, idx2{_idx2}, idx3{_idx3} {}
+  FaceforHE(int _idx1, int _idx2, int _idx3)
+  : idx1{_idx1}, idx2{_idx2}, idx3{_idx3} {}
 };
 
 struct Mesh_Data
