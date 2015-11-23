@@ -303,6 +303,40 @@ double rad2deg(double angle) {
   return angle * 180.0 / M_PI;
 }
 
+/** Cross product **/
+Vertex cross(Vertex v1, Vertex v2) {
+  Vertex v_res(0, 0, 0);
+  v_res.x = v1.y * v2.z - v1.z * v2.y;
+  v_res.y = v1.z * v2.x - v1.x * v2.z;
+  v_res.z = v1.x * v2.y - v1.y * v2.z;
+  return v_res;
+}
+
+/** Get normal given HEV **/
+Vertex compute_normal(HEV *v) {
+  Vertex net_normal;
+
+  auto he = v->out;
+  do {
+    auto f = he->face;
+    Vertex v1 = f->edge->vertex->getVertex();
+    Vertex v2 = f->edge->next->vertex->getVertex();
+    Vertex v3 = f->edge->next->next->vertex->getVertex();
+
+    // face_normal = cross product of (v2 - v1) x (v3 - v1)
+    auto face_normal = cross(v2 - v1, v3 - v1);
+    // face area = 1/2 | face_normal |
+    auto face_area = 0.5 * face_normal.norm();
+    // n += face_normal * face_area
+    net_normal += face_normal * face_area;
+
+    he = he->flip->next;
+  } while (he != v->out);
+
+  // normalize n and return it
+  return net_normal.normalized();
+}
+
 /** Parse and display a scene with the given window resolution **/
 int main(int argc, char *argv[]) {
   // Get cli args:
@@ -319,6 +353,10 @@ int main(int argc, char *argv[]) {
   auto scene = SceneParser::parse_scene(scene_desc_file_stream);
 
 
+
+  ///////////////////////////////////////////////////////////////////////
+  //////////// MAKE HALF EDGES //////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////
   /** Make half edges **/
 
   auto mesh_data = std::make_unique<Mesh_Data>();
@@ -354,9 +392,23 @@ int main(int argc, char *argv[]) {
   auto hevs = new std::vector<HEV*>();
   auto hefs = new std::vector<HEF*>();
   build_HE(mesh_data.get(), hevs, hefs);
-  
 
+  //////////////////////////////////////////////////////////////////////
+  //////////// COMPUTE NORMALS  ////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
   // TODO(jg): compute normals
+  for (auto& hev : hevs) {
+    auto computed_normal = compute_normal(hev);
+    hev->normal.x = computed_normal.x;
+    hev->normal.y = computed_normal.y;
+    hev->normal.z = computed_normal.z;
+  }
+
+  //////////////////////////////////////////////////////////////////////
+  /////////// Put results in objects ///////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+
+
 
   objects = *(scene->objects_up);
   lights = *(scene->lights_up);

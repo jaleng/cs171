@@ -157,6 +157,11 @@ struct HEV // HEV for halfedge vertex
     int index;
     // you can use this to store the normal vector for the vertex
     Vec3f normal;
+
+
+  Vertex getVertex() const {
+    return Vertex(x, y, z);
+  }
 };
 
 /* After this point, the comments stop. You shouldn't really need to know the
