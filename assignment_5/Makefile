@@ -14,7 +14,7 @@
 CC = g++
 FLAGS = -std=c++14 -g -o
 
-INCLUDE = -I/usr/X11R6/include -I/usr/include/GL -I/usr/include
+INCLUDE = -I/usr/X11R6/include -I/usr/include/GL -I/usr/include -I../
 LIBDIR = -L/usr/X11R6/lib -L/usr/local/lib
 SOURCES = *.cc #*.cpp
 LIBS = -lGLEW -lGL -lGLU -lglut -lm

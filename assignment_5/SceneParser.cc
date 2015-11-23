@@ -307,9 +307,9 @@ SceneParser::make_obj_vec(std::vector<ObjectCopyInfo> *objcpy_info_vec_p,
       obj.vertex_buffer.push_back(obj_data.vertices[face.v2_idx - 1]);
       obj.vertex_buffer.push_back(obj_data.vertices[face.v3_idx - 1]);
 
-      obj.normal_buffer.push_back(obj_data.normals[face.v1_normal_idx - 1]);
-      obj.normal_buffer.push_back(obj_data.normals[face.v2_normal_idx - 1]);
-      obj.normal_buffer.push_back(obj_data.normals[face.v3_normal_idx - 1]);
+      //obj.normal_buffer.push_back(obj_data.normals[face.v1_normal_idx - 1]);
+      //obj.normal_buffer.push_back(obj_data.normals[face.v2_normal_idx - 1]);
+      //obj.normal_buffer.push_back(obj_data.normals[face.v3_normal_idx - 1]);
     }
 
     obj.transforms = objcpy_info.transforms;
