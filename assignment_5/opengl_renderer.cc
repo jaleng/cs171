@@ -6,6 +6,9 @@
 #include <GL/glut.h>
 #include <math.h>
 
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
+
 #include "SceneParser.h"
 #include "PointLight.h"
 #include "Object.h"
@@ -312,6 +315,11 @@ Vertex cross(Vertex v1, Vertex v2) {
   return v_res;
 }
 
+/** Dot product **/
+Vertex dot(Vertex v1, Vertex v2) {
+  return Vertex(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z);
+}
+
 /** Get normal given HEV **/
 Vertex compute_normal(HEV *v) {
   Vertex net_normal;
@@ -336,6 +344,61 @@ Vertex compute_normal(HEV *v) {
   // normalize n and return it
   return net_normal.normalized();
 }
+
+/** function to assign each vertex in our mesh to an index **/
+void index_vertices(std::vector<HEV*> *vertices) {
+  for (int i = 1; i < vertices->size(); ++i)  // start at 1 because obj files are 1-indexed
+    vertices->at(i)->index = i;  // assign each vertex an index
+}
+
+/** Make discrete Laplacian operator **/
+// function to construct our B operator in matrix form  
+Eigen::SparseMatrix<double> build_F_operator( std::vector<HEV*> *vertices ) {  
+  index_vertices(vertices);  // assign each vertex an index
+
+  // recall that due to 1-indexing of obj files,
+  // index 0 of our list doesn't actually contain a vertex  
+  int num_vertices = vertices->size() - 1;
+
+  // initialize a sparse matrix to represent our B operator
+  Eigen::SparseMatrix<double> B(num_vertices, num_vertices);
+
+  // reserve room for 7 non-zeros per row of B
+  B.reserve(Eigen::VectorXi::Constant(num_vertices, 7));
+
+  for (int i = 1; i < vertices->size(); ++i) {
+    Halfedge *he = vertices->at(i)->halfedge;
+
+    float sum_over_j = 0
+    do {  // iterate over all vertices adjacent to v_i
+      int j = he->next->vertex->index;  // get index of adjacent vertex to v_i
+      Vertex v_i = he->vertex->getVertex();
+      Vertex v_j = he->next->vertex->getVertex();
+      Vertex v_b = he->next->next->vertex->getVertex();
+      Vertex v_a = he->flip->next->next->vertex->getVertex();
+
+      Vertex a1 = v_a - v_i;
+      Vertex a2 = v_j - v_a;
+      Vertex b1 = v_b - v_j;
+      Vertex b2 = v_i - v_b;
+
+      float cot_alpha = dot(a1, a2) / cross(a1, a2).norm();
+      float cot_beta = dot(b1, b2) / cross(b1, b2).norm();
+
+      float cot_sum = cot_alpha + cot_beta;
+      sum_over_j -= 0.5 * cot_sum;
+      B.insert(i-1, j-1) = 0.5 * cot_sum;
+
+    } while (he != vertices->at(i)->halfedge);
+
+    B.insert(i-1, i-1) = sum_over_j;
+  }
+
+  B.makeCompressed();  // optional; tells Eigen to more efficiently store our sparse matrix
+  return B;
+}
+
+
 
 /** Parse and display a scene with the given window resolution **/
 int main(int argc, char *argv[]) {
@@ -390,6 +453,7 @@ int main(int argc, char *argv[]) {
   mesh_data->vertices = &pvertices_for_HE_build;
   mesh_data->faces = &pfaces_for_HE_build;
   auto hevs = new std::vector<HEV*>();
+  index_vertices(hevs);
   auto hefs = new std::vector<HEF*>();
   build_HE(mesh_data.get(), hevs, hefs);
 
@@ -397,7 +461,10 @@ int main(int argc, char *argv[]) {
   //////////// COMPUTE NORMALS  ////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   // TODO(jg): compute normals
-  for (auto& hev : hevs) {
+  for (auto& hev : *hevs) {
+    if (hev == nullptr) {
+      continue;
+    }
     auto computed_normal = compute_normal(hev);
     hev->normal.x = computed_normal.x;
     hev->normal.y = computed_normal.y;
@@ -407,10 +474,22 @@ int main(int argc, char *argv[]) {
   //////////////////////////////////////////////////////////////////////
   /////////// Put results in objects ///////////////////////////////////
   //////////////////////////////////////////////////////////////////////
-
-
-
   objects = *(scene->objects_up);
+  objects[0].vertex_buffer.clear();
+  objects[0].normal_buffer.clear();
+  for (const auto& f : *hefs) {
+    auto v1 = f->edge->vertex;
+    auto v2 = f->edge->next->vertex;
+    auto v3 = f->edge->next->next->vertex;
+    objects[0].vertex_buffer.emplace_back(v1->x, v1->y, v1->z);
+    objects[0].vertex_buffer.emplace_back(v2->x, v2->y, v2->z);
+    objects[0].vertex_buffer.emplace_back(v3->x, v3->y, v3->z);
+
+    objects[0].normal_buffer.emplace_back(v1->normal.x, v1->normal.y, v1->normal.z);
+    objects[0].normal_buffer.emplace_back(v2->normal.x, v2->normal.y, v2->normal.z);
+    objects[0].normal_buffer.emplace_back(v3->normal.x, v3->normal.y, v3->normal.z);
+  }
+
   lights = *(scene->lights_up);
 
   // Set global camera parameters
