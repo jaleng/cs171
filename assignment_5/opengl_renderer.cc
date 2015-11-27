@@ -352,8 +352,8 @@ void index_vertices(std::vector<HEV*> *vertices) {
 }
 
 /** Make discrete Laplacian operator **/
-// function to construct our B operator in matrix form  
-Eigen::SparseMatrix<double> build_F_operator( std::vector<HEV*> *vertices, float h) {  
+// function to construct our B operator in matrix form
+Eigen::SparseMatrix<double> build_F_operator(std::vector<HEV*> *vertices, float h) {  
   index_vertices(vertices);  // assign each vertex an index
 
   // recall that due to 1-indexing of obj files,
@@ -369,6 +369,22 @@ Eigen::SparseMatrix<double> build_F_operator( std::vector<HEV*> *vertices, float
   for (int i = 1; i < vertices->size(); ++i) {
     HE *he = vertices->at(i)->out;
 
+    // Get total area sum over incident faces
+    float total_area = 0;
+    do {
+      auto f = he->face;
+      Vertex v1 = f->edge->vertex->getVertex();
+      Vertex v2 = f->edge->next->vertex->getVertex();
+      Vertex v3 = f->edge->next->next->vertex->getVertex();
+
+      // face_normal = cross product of (v2 - v1) x (v3 - v1)
+      auto face_normal = cross(v2 - v1, v3 - v1);
+      // face area = 1/2 | face_normal |
+      auto face_area = 0.5 * face_normal.norm();
+      total_area += face_area;
+      he = he->flip->next;
+    } while (he != vertices->at(i)->out);
+
     float sum_over_j = 0;
     do {  // iterate over all vertices adjacent to v_i
       int j = he->next->vertex->index;  // get index of adjacent vertex to v_i
@@ -377,17 +393,19 @@ Eigen::SparseMatrix<double> build_F_operator( std::vector<HEV*> *vertices, float
       Vertex v_b = he->next->next->vertex->getVertex();
       Vertex v_a = he->flip->next->next->vertex->getVertex();
 
-      Vertex a1 = v_a - v_i;
+      Vertex a1 = v_i - v_a;
       Vertex a2 = v_j - v_a;
-      Vertex b1 = v_b - v_j;
+      Vertex b1 = v_j - v_b;
       Vertex b2 = v_i - v_b;
 
       float cot_alpha = dot(a1, a2) / (cross(a1, a2).norm());
       float cot_beta = dot(b1, b2) / (cross(b1, b2).norm());
 
       float cot_sum = cot_alpha + cot_beta;
-      sum_over_j -= 0.5 * cot_sum;
-      L.insert(i-1, j-1) = 0.5 * cot_sum;
+      sum_over_j -= 0.5 * cot_sum / total_area;
+      L.insert(i-1, j-1) = 0.5 * cot_sum / total_area;
+
+      he = he ->flip->next;
     } while (he != vertices->at(i)->out);
 
     L.insert(i-1, i-1) = sum_over_j;
@@ -538,7 +556,7 @@ int main(int argc, char *argv[]) {
   //////////////////////////////////////////////////////////////////////
   ////////////// SMOOTH ////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
-  smooth(hevs, 0.2);
+  smooth(hevs, .0001);
 
   //////////////////////////////////////////////////////////////////////
   //////////// COMPUTE NORMALS  ////////////////////////////////////////
