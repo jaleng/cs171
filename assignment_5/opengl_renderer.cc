@@ -499,11 +499,11 @@ void smooth(std::vector<HEV*> *vertices, float h) {
 /** Parse and display a scene with the given window resolution **/
 int main(int argc, char *argv[]) {
   // Get cli args:
-  // ./opengl_renderer [scene_description_file.txt] [xres] [yres] [mode]
+  // ./opengl_renderer [scene_description_file.txt] [xres] [yres] [smoothing]
   std::ifstream scene_desc_file_stream{argv[1]};
   int xres = atoi(argv[2]);
   int yres = atoi(argv[3]);
-
+  float smooth_factor = atof(argv[4]);
   // Set global window params for arcball calculation
   window_width = xres;
   window_height = yres;
@@ -556,7 +556,7 @@ int main(int argc, char *argv[]) {
   //////////////////////////////////////////////////////////////////////
   ////////////// SMOOTH ////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
-  smooth(hevs, .0001);
+  smooth(hevs, smooth_factor);
 
   //////////////////////////////////////////////////////////////////////
   //////////// COMPUTE NORMALS  ////////////////////////////////////////
