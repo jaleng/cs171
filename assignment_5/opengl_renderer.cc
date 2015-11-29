@@ -333,9 +333,9 @@ int main(int argc, char *argv[]) {
   // TODO: make std::vector<Vertex*> *vertices for mesh
   std::vector<Vertex> vertices_for_HE_build;
   for (const auto& triple : obj_data.vertices) {
-    vertices_for_HE_build.emplace_back(static_cast<float>(triple.x),
-                                       static_cast<float>(triple.y),
-                                       static_cast<float>(triple.z));
+    vertices_for_HE_build.emplace_back(triple.x,
+                                       triple.y,
+                                       triple.z);
   }
   std::vector<Vertex*> pvertices_for_HE_build;
   // Prep for 1-indexing
