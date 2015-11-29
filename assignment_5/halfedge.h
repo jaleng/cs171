@@ -156,7 +156,7 @@ struct HEV // HEV for halfedge vertex
     // before building the operator for implicit fairing
     int index;
     // you can use this to store the normal vector for the vertex
-    Vec3f normal;
+    Vec3d normal;
 
 
   Vertex getVertex() const {

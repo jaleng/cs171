@@ -3,21 +3,21 @@
 
 #include <vector>
 
-struct Vec3f
+struct Vec3d
 {
-	float x, y, z;
+	double x, y, z;
 };
 
 struct Vertex
 {
-  float x, y, z;
-  explicit Vertex(float _x, float _y, float _z)
+  double x, y, z;
+  explicit Vertex(double _x, double _y, double _z)
   : x{_x}, y{_y}, z{_z} {}
 
   /** Default constructor, initializes to (0,0,0) **/
   Vertex() : x{0}, y{0}, z{0} {}
 
-  const Vertex& operator/=(float s) {
+  const Vertex& operator/=(double s) {
     x /= s;
     y /= s;
     z /= s;
@@ -62,15 +62,15 @@ struct Vertex
     return v;
   }
 
-  Vertex operator/(const float s) const {
+  Vertex operator/(const double s) const {
     return Vertex(x / s, y / s, z / s);
   }
 
-  Vertex operator*(const float s) const {
+  Vertex operator*(const double s) const {
     return Vertex(x * s, y * s, z * s);
   }
 
-  float norm() {
+  double norm() {
     return sqrt(x * x + y * y + z * z);
   }
 };

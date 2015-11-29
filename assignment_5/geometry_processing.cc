@@ -35,7 +35,7 @@ Vertex cross(Vertex v1, Vertex v2) {
 }
 
 /** Dot product **/
-float dot(Vertex v1, Vertex v2) {
+double dot(Vertex v1, Vertex v2) {
   return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
@@ -47,7 +47,7 @@ void index_vertices(std::vector<HEV*> *vertices) {
 
 /** Make discrete Laplacian operator **/
 // function to construct our B operator in matrix form
-Eigen::SparseMatrix<double> build_F_operator(std::vector<HEV*> *vertices, float h) {  
+Eigen::SparseMatrix<double> build_F_operator(std::vector<HEV*> *vertices, double h) {  
   index_vertices(vertices);  // assign each vertex an index
 
   // recall that due to 1-indexing of obj files,
@@ -64,7 +64,7 @@ Eigen::SparseMatrix<double> build_F_operator(std::vector<HEV*> *vertices, float 
     HE *he = vertices->at(i)->out;
 
     // Get total area sum over incident faces
-    float total_area = 0;
+    double total_area = 0;
     do {
       auto f = he->face;
       Vertex v1 = f->edge->vertex->getVertex();
@@ -80,7 +80,7 @@ Eigen::SparseMatrix<double> build_F_operator(std::vector<HEV*> *vertices, float 
     } while (he != vertices->at(i)->out);
 
     if (total_area > 0.0000001) {
-      float sum_over_j = 0;
+      double sum_over_j = 0;
       do {  // iterate over all vertices adjacent to v_i
         int j = he->next->vertex->index;  // get index of adjacent vertex to v_i
         Vertex v_i = he->vertex->getVertex();
@@ -93,10 +93,10 @@ Eigen::SparseMatrix<double> build_F_operator(std::vector<HEV*> *vertices, float 
         Vertex b1 = v_j - v_b;
         Vertex b2 = v_i - v_b;
 
-        float cot_alpha = dot(a1, a2) / (cross(a1, a2).norm());
-        float cot_beta = dot(b1, b2) / (cross(b1, b2).norm());
+        double cot_alpha = dot(a1, a2) / (cross(a1, a2).norm());
+        double cot_beta = dot(b1, b2) / (cross(b1, b2).norm());
 
-        float cot_sum = cot_alpha + cot_beta;
+        double cot_sum = cot_alpha + cot_beta;
         sum_over_j -= 0.5 * cot_sum / total_area;
         L.insert(i-1, j-1) = 0.5 * cot_sum / total_area;
 
@@ -157,7 +157,7 @@ void set_z(std::vector<HEV*> *vertices, const Eigen::VectorXd& z_new) {
   }
 }
 
-void smooth(std::vector<HEV*> *vertices, float h) {
+void smooth(std::vector<HEV*> *vertices, double h) {
   // get our matrix representation of B
   Eigen::SparseMatrix<double> F = build_F_operator(vertices, h);
 
