@@ -8,6 +8,7 @@
 #include "halfedge.h"
 
 Vertex compute_normal(HEV *v);
+void reset_normals(std::vector<HEV*> *hevs);
 
 double dot(Vertex v1, Vertex v2);
 Vertex cross(Vertex v1, Vertex v2);

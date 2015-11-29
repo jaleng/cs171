@@ -2,7 +2,7 @@
 
 /** Get normal given HEV **/
 Vertex compute_normal(HEV *v) {
-  Vertex net_normal;
+  Vertex net_normal(0.0, 0.0, 0.0);
 
   auto he = v->out;
   do {
@@ -23,6 +23,18 @@ Vertex compute_normal(HEV *v) {
 
   // normalize n and return it
   return net_normal.normalized();
+}
+
+void reset_normals(std::vector<HEV*> *hevs) {
+  for (auto& hev : *hevs) {
+    if (hev == nullptr) {
+      continue;
+    }
+    auto computed_normal = compute_normal(hev);
+    hev->normal.x = computed_normal.x;
+    hev->normal.y = computed_normal.y;
+    hev->normal.z = computed_normal.z;
+  }
 }
 
 /** Cross product **/
