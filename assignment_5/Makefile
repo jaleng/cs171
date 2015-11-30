@@ -19,7 +19,7 @@ LIBDIR = -L/usr/X11R6/lib -L/usr/local/lib
 SOURCES = *.cc #*.cpp
 LIBS = -lGLEW -lGL -lGLU -lglut -lm
 
-EXENAME = opengl_renderer
+EXENAME = smooth
 
 all: $(SOURCES) *.h
 	$(CC) $(FLAGS) $(EXENAME) $(INCLUDE) $(LIBDIR) $(SOURCES) $(LIBS)
