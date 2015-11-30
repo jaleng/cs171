@@ -45,4 +45,4 @@ namespace SceneParser {
                     std::map<std::string, ObjectData> *objid_to_data_p);
 };  // namespace SceneParser
 
-#endif // _SCENEPARSER_H_
+#endif  // _SCENEPARSER_H_

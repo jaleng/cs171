@@ -28,6 +28,7 @@ std::vector<Object> objects;
 std::vector<HEV*> *hevs;
 std::vector<HEF*> *hefs;
 
+/** Smoothing factor **/
 float smooth_factor = 0;
 
 //// Forward declarations
@@ -119,7 +120,7 @@ void reshape(int width, int height) {
 /** Display objects on gl window **/
 void display(void) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
+
   glLoadIdentity();
 
   // Apply inverse camera transform (world-space -> camera space)
@@ -299,6 +300,7 @@ void key_pressed(unsigned char key, int x, int y) {
      */
     glutPostRedisplay();
   }
+  // If 's' is pressed, smooth the mesh by the given smoothing factor
   else if (key == 's') {
     do_smoothing();
     glutPostRedisplay();
@@ -315,6 +317,7 @@ double rad2deg(double angle) {
   return angle * 180.0 / M_PI;
 }
 
+/** Smooth and reset the object's vertex buffer and normal buffer **/
 void do_smoothing() {
   smooth(hevs, smooth_factor);
   objects[0].vertex_buffer.clear();
@@ -348,8 +351,6 @@ int main(int argc, char *argv[]) {
 
   // Parse the scene description file
   auto scene = SceneParser::parse_scene(scene_desc_file_stream);
-
-
 
   /** Make half edges **/
   auto mesh_data = std::make_unique<Mesh_Data>();

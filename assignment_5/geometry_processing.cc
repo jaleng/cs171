@@ -42,7 +42,7 @@ Vertex cross(Vertex v1, Vertex v2) {
   Vertex v_res(0, 0, 0);
   v_res.x = v1.y * v2.z - v1.z * v2.y;
   v_res.y = v1.z * v2.x - v1.x * v2.z;
-  v_res.z = v1.x * v2.y - v1.y * v2.z;
+  v_res.z = v1.x * v2.y - v1.y * v2.x;
   return v_res;
 }
 
@@ -57,8 +57,7 @@ void index_vertices(std::vector<HEV*> *vertices) {
     vertices->at(i)->index = i;  // assign each vertex an index
 }
 
-/** Make discrete Laplacian operator **/
-// function to construct our B operator in matrix form
+/** Make smoothing operator **/
 Eigen::SparseMatrix<double> build_F_operator(std::vector<HEV*> *vertices, double h) {  
   index_vertices(vertices);  // assign each vertex an index
 
@@ -99,6 +98,10 @@ Eigen::SparseMatrix<double> build_F_operator(std::vector<HEV*> *vertices, double
         Vertex v_j = he->next->vertex->getVertex();
         Vertex v_b = he->next->next->vertex->getVertex();
         Vertex v_a = he->flip->next->next->vertex->getVertex();
+
+        // Need to find cot(alpha) + cot(beta)
+        // where alpha is the v_i, v_a, v_j angle
+        //       beta is the v_i, v_b, v_j angle
 
         Vertex a1 = v_i - v_a;
         Vertex a2 = v_j - v_a;
@@ -186,18 +189,11 @@ void smooth(std::vector<HEV*> *vertices, double h) {
   auto x0 = build_x0(vertices);
   auto y0 = build_y0(vertices);
   auto z0 = build_z0(vertices);
-  //Eigen::VectorXd rho_vector(num_vertices);
-  //for (int i = 1; i < vertices->size(); ++i)
-  //  rho_vector(i - 1) = rho(i);  // assuming we can retrieve our given rho values from somewhere
 
-  // have Eigen solve for our phi_vector
-  //Eigen::VectorXd phi_vector(num_vertices);
   auto x_new = solver.solve(x0);
   auto y_new = solver.solve(y0);
   auto z_new = solver.solve(z0);
-  // phi_vector = solver.solve(rho_vector);
 
-  // do something with phi_vector
   set_x(vertices, x_new);
   set_y(vertices, y_new);
   set_z(vertices, z_new);

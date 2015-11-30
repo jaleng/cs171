@@ -4,7 +4,8 @@
 #include "Triple.h"
 
 /** Parse a scene given a scene description file stream. **/
-std::unique_ptr<Scene> SceneParser::parse_scene(std::ifstream& scene_desc_file_stream) {
+std::unique_ptr<Scene>
+SceneParser::parse_scene(std::ifstream& scene_desc_file_stream) {
   // Parse the camera
   auto camera_up = parse_camera(scene_desc_file_stream);
   // Parse lights
@@ -31,11 +32,11 @@ std::unique_ptr<Camera>
 SceneParser::parse_camera(std::ifstream& file_stream) {
   using std::string;
   using std::stringstream;
-  
+
   double px, py, pz;
   double ox, oy, oz, theta;
   double near, far, left, right, top, bottom;
-  
+
   while (!file_stream.eof()) {
     string line;
     getline(file_stream, line);
@@ -124,7 +125,8 @@ SceneParser::parse_lights(std::ifstream& file_stream) {
 
 /** Parse object data. */
 std::unique_ptr<std::map<std::string, ObjectData>>
-SceneParser::make_obj_to_data(const std::map<std::string, std::string>* obj_name_to_file_name_p) {
+SceneParser::make_obj_to_data(const std::map<std::string,
+                              std::string>* obj_name_to_file_name_p) {
   using std::map;
   using std::string;
   using std::vector;
@@ -151,11 +153,12 @@ SceneParser::make_obj_to_data(const std::map<std::string, std::string>* obj_name
       string token;
       line_stream >> token;
       if (token == "v") {
-        float x, y, z;
+        double x, y, z;
         line_stream >> x >> y >> z;
         vertices.emplace_back(x, y, z);
       } else if (token == "vn") {
-        // TODO(jg): no more normals being read in, obsolete code
+        // No more normals being read in, obsolete code
+        assert(false);  // Parsing error
         double x, y, z;
         line_stream >> x >> y >> z;
         normals.emplace_back(x, y, z);
@@ -180,7 +183,7 @@ SceneParser::parse_obj_copy_info(std::ifstream& file_stream) {
   using std::stringstream;
   using std::vector;
 
-  std::unique_ptr<vector<ObjectCopyInfo>> obj_copy_info_vec_up {new vector<ObjectCopyInfo>{}};
+  auto obj_copy_info_vec_up = std::make_unique<vector<ObjectCopyInfo>>();
 
   while (!file_stream.eof()) {
     // read 1 obj and its transformations
@@ -199,7 +202,7 @@ SceneParser::parse_obj_copy_info(std::ifstream& file_stream) {
     double shininess = 0;
 
     std::vector<Transform> transforms;
-    
+
     for (getline(file_stream, line); !line.empty(); getline(file_stream, line)) {
       stringstream transform_line_stream(line);
       string token;
@@ -306,10 +309,6 @@ SceneParser::make_obj_vec(std::vector<ObjectCopyInfo> *objcpy_info_vec_p,
       obj.vertex_buffer.push_back(obj_data.vertices[face.v1_idx - 1]);
       obj.vertex_buffer.push_back(obj_data.vertices[face.v2_idx - 1]);
       obj.vertex_buffer.push_back(obj_data.vertices[face.v3_idx - 1]);
-
-      //obj.normal_buffer.push_back(obj_data.normals[face.v1_normal_idx - 1]);
-      //obj.normal_buffer.push_back(obj_data.normals[face.v2_normal_idx - 1]);
-      //obj.normal_buffer.push_back(obj_data.normals[face.v3_normal_idx - 1]);
     }
 
     obj.transforms = objcpy_info.transforms;

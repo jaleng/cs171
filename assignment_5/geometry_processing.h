@@ -1,5 +1,8 @@
 #ifndef GEOMETRY_PROCESSING_H_
 #define GEOMETRY_PROCESSING_H_
+/* 
+ * Header file for geometry processing functions
+ */
 
 #include <vector>
 #include <Eigen/Sparse>
@@ -20,7 +23,6 @@ Eigen::SparseMatrix<double> build_F_operator(std::vector<HEV*> *vertices, double
 Eigen::VectorXd build_x0(std::vector<HEV*> *vertices);
 Eigen::VectorXd build_y0(std::vector<HEV*> *vertices);
 Eigen::VectorXd build_z0(std::vector<HEV*> *vertices);
-
 
 void set_x(std::vector<HEV*> *vertices, const Eigen::VectorXd& x_new);
 void set_y(std::vector<HEV*> *vertices, const Eigen::VectorXd& y_new);
