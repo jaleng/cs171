@@ -201,4 +201,6 @@ void smooth(std::vector<HEV*> *vertices, double h) {
   set_x(vertices, x_new);
   set_y(vertices, y_new);
   set_z(vertices, z_new);
+
+  reset_normals(vertices);
 }

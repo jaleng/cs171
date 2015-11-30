@@ -24,6 +24,12 @@ std::vector<PointLight> lights;
 /** Objects in the scene **/
 std::vector<Object> objects;
 
+/** Halfedge objects **/
+std::vector<HEV*> *hevs;
+std::vector<HEF*> *hefs;
+
+float smooth_factor = 0;
+
 //// Forward declarations
 void init(void);
 void reshape(int width, int height);
@@ -34,6 +40,7 @@ void draw_objects();
 void mouse_pressed(int button, int state, int x, int y);
 void mouse_moved(int x, int y);
 void key_pressed(unsigned char key, int x, int y);
+void do_smoothing();
 double deg2rad(double angle);
 double rad2deg(double angle);
 
@@ -292,6 +299,10 @@ void key_pressed(unsigned char key, int x, int y) {
      */
     glutPostRedisplay();
   }
+  else if (key == 's') {
+    do_smoothing();
+    glutPostRedisplay();
+  }
 }
 
 /** Convert angle values from degrees to radians **/
@@ -304,6 +315,24 @@ double rad2deg(double angle) {
   return angle * 180.0 / M_PI;
 }
 
+void do_smoothing() {
+  smooth(hevs, smooth_factor);
+  objects[0].vertex_buffer.clear();
+  objects[0].normal_buffer.clear();
+
+  for (const auto& f : *hefs) {
+    auto v1 = f->edge->vertex;
+    auto v2 = f->edge->next->vertex;
+    auto v3 = f->edge->next->next->vertex;
+    objects[0].vertex_buffer.emplace_back(v1->x, v1->y, v1->z);
+    objects[0].vertex_buffer.emplace_back(v2->x, v2->y, v2->z);
+    objects[0].vertex_buffer.emplace_back(v3->x, v3->y, v3->z);
+
+    objects[0].normal_buffer.emplace_back(v1->normal.x, v1->normal.y, v1->normal.z);
+    objects[0].normal_buffer.emplace_back(v2->normal.x, v2->normal.y, v2->normal.z);
+    objects[0].normal_buffer.emplace_back(v3->normal.x, v3->normal.y, v3->normal.z);
+  }
+}
 
 /** Parse and display a scene with the given window resolution **/
 int main(int argc, char *argv[]) {
@@ -312,7 +341,7 @@ int main(int argc, char *argv[]) {
   std::ifstream scene_desc_file_stream{argv[1]};
   int xres = atoi(argv[2]);
   int yres = atoi(argv[3]);
-  float smooth_factor = atof(argv[4]);
+  smooth_factor = atof(argv[4]);
   // Set global window params for arcball calculation
   window_width = xres;
   window_height = yres;
@@ -322,21 +351,16 @@ int main(int argc, char *argv[]) {
 
 
 
-  ///////////////////////////////////////////////////////////////////////
-  //////////// MAKE HALF EDGES //////////////////////////////////////////
-  ///////////////////////////////////////////////////////////////////////
   /** Make half edges **/
-
   auto mesh_data = std::make_unique<Mesh_Data>();
-  // TODO: get the ObjectData
+  // Get the ObjectData
   auto obj_data = scene->objid_to_data_up->begin()->second;
-  // TODO: make std::vector<Vertex*> *vertices for mesh
+  // Make std::vector<Vertex*> *vertices for mesh
   std::vector<Vertex> vertices_for_HE_build;
   for (const auto& triple : obj_data.vertices) {
-    vertices_for_HE_build.emplace_back(triple.x,
-                                       triple.y,
-                                       triple.z);
+    vertices_for_HE_build.emplace_back(triple.x, triple.y, triple.z);
   }
+
   std::vector<Vertex*> pvertices_for_HE_build;
   // Prep for 1-indexing
   pvertices_for_HE_build.push_back(nullptr);
@@ -344,7 +368,7 @@ int main(int argc, char *argv[]) {
     pvertices_for_HE_build.push_back(&v);
   }
 
-  // TODO: make std::vector<FaceforHE*> *faces
+  // Make std::vector<FaceforHE*> *faces
   std::vector<FaceforHE> faces_for_HE_build;
   for (const auto& f : obj_data.faces) {
     faces_for_HE_build.emplace_back(f.v1_idx, f.v2_idx, f.v3_idx);
@@ -354,30 +378,21 @@ int main(int argc, char *argv[]) {
     pfaces_for_HE_build.push_back(&f);
   }
 
-  // TODO: build half edges
+  // Build half edges
   mesh_data->vertices = &pvertices_for_HE_build;
   mesh_data->faces = &pfaces_for_HE_build;
-  auto hevs = new std::vector<HEV*>();
+  auto hevs_up = std::make_unique<std::vector<HEV*>>();
+  hevs = hevs_up.get();
   index_vertices(hevs);
-  auto hefs = new std::vector<HEF*>();
+  auto hefs_up = std::make_unique<std::vector<HEF*>>();
+  hefs = hefs_up.get();
   build_HE(mesh_data.get(), hevs, hefs);
 
-  //////////////////////////////////////////////////////////////////////
-  ////////////// SMOOTH ////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////
-  smooth(hevs, smooth_factor);
-
-  //////////////////////////////////////////////////////////////////////
-  //////////// COMPUTE NORMALS  ////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////
-  reset_normals(hevs);
-  //////////////////////////////////////////////////////////////////////
-  /////////// Put results in objects ///////////////////////////////////
-  //////////////////////////////////////////////////////////////////////
+  // Store vertices and calculated normals into the object
   objects = *(scene->objects_up);
   objects[0].vertex_buffer.clear();
   objects[0].normal_buffer.clear();
-
+  reset_normals(hevs);
   for (const auto& f : *hefs) {
     auto v1 = f->edge->vertex;
     auto v2 = f->edge->next->vertex;
