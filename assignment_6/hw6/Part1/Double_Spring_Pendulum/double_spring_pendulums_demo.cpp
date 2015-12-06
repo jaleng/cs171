@@ -240,27 +240,45 @@ void update_pendulums()
      * 
      */
 
-    
+  auto x1s = m1.x;
+  auto y1s = m1.y;
+  auto x2s = m2.x;
+  auto y2s = m2.y;
+  auto px1s = m1.px;
+  auto py1s = m1.py;
+  auto px2s = m2.px;
+  auto py2s = m2.py;
+  auto l1 = m1.rl;
+  auto l2 = m2.rl;
+  auto k1 = m1.k;
+  auto k2 = m2.k;
+
+  // Sqrt[x1s^2+y1s^2]
+  auto sqrtx1y1 = sqrt(x1s*x1s+y1s*y1s);
+  // Sqrt[(-x1s+x2s)^2+(-y1s+y2s)^2]
+  auto sqrtx2mx1y2my1 = sqrt((x2s-x1s)*(x2s-x1s)+(y2s-y1s)*(y2s-y1s));
 
 
+  auto px1_next = -((-dt*k2*l2*x1s*sqrtx1y1+dt*k2*l2*x2s*sqrtx1y1-dt*k1*l1*x1s*sqrtx2mx1y2my1-px1s*sqrtx1y1*sqrtx2mx1y2my1+dt*k1*x1s*sqrtx1y1*sqrtx2mx1y2my1+dt*k2*x1s*sqrtx1y1*sqrtx2mx1y2my1-dt*k2*x2s*sqrtx1y1*sqrtx2mx1y2my1)/(sqrtx1y1*sqrtx2mx1y2my1));
+  auto px2_next = px2s-(dt*k2*(-x1s+x2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1;
+  auto py1_next = dt*g*m1.m+py1s-(dt*k1*y1s*(-l1+sqrtx1y1))/sqrtx1y1+(dt*k2*(-y1s+y2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1;
+  auto py2_next = dt*g*m2.m+py2s-(dt*k2*(-y1s+y2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1;
+  auto x1_next = (dt*(px1s+(m1.m*x1s)/dt-(dt*k1*x1s*(-l1+sqrtx1y1))/sqrtx1y1+(dt*k2*(-x1s+x2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1))/m1.m;
+  auto x2_next = (dt*(px2s+(m2.m*x2s)/dt-(dt*k2*(-x1s+x2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1))/m2.m;
+  auto y1_next = (dt*(dt*g*m1.m+py1s+(m1.m*y1s)/dt-(dt*k1*y1s*(-l1+sqrtx1y1))/sqrtx1y1+(dt*k2*(-y1s+y2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1))/m1.m;
+  auto y2_next = (dt*(dt*g*m2.m+py2s+(m2.m*y2s)/dt-(dt*k2*(-y1s+y2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1))/m2.m;
 
+  m1.px = px1_next;
+  m2.px = px2_next;
 
+  m1.py = py1_next;
+  m2.py = py2_next;
 
+  m1.x = x1_next;
+  m2.x = x2_next;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
+  m1.y = y1_next;
+  m2.y = y2_next;
 
     /****************************** END TODO ****************************/
 

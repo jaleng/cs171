@@ -11,7 +11,7 @@
 # fool around with the 'INCLUDE' and 'LIBDIR' lines below before the Makefile
 # can compile the OpenGL parts successfully.
 ###############################################################################
-CC = g++
+CC = g++ -std=c++14
 FLAGS = -g
 
 INCLUDE = -I/usr/X11R6/include -I/usr/include/GL -I/usr/include
