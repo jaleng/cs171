@@ -304,6 +304,9 @@ void key_pressed(unsigned char key, int x, int y) {
      * now as wireframes (or surfaces if they were wireframes before).
      */
     glutPostRedisplay();
+  } else if (key == 'f') {
+    show_next_frame();
+    glutPostRedisplay();
   }
 }
 
