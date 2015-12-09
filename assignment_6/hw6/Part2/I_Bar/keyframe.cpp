@@ -416,13 +416,18 @@ std::unique_ptr<Animation> parse_animation(std::ifstream& file_stream) {
 int main(int argc, char *argv[]) {
   // Get cli args:
   // ./opengl_renderer [scene_description_file.txt] [xres] [yres] [mode]
-  std::ifstream scene_desc_file_stream{argv[1]};
+  std::ifstream animation_desc_file_stream{argv[1]};
   int xres = atoi(argv[2]);
   int yres = atoi(argv[3]);
 
   // Set global window params for arcball calculation
   window_width = xres;
   window_height = yres;
+
+  // Parse animation
+  auto animation_up = parse_animation(animation_desc_file_stream);
+  animation = animation_up.get();
+  animation->interpolate();
 
   // Set global camera parameters
   // Camera hardcoded
