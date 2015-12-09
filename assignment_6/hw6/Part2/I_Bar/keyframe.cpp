@@ -37,6 +37,8 @@ void key_pressed(unsigned char key, int x, int y);
 double deg2rad(double angle);
 double rad2deg(double angle);
 void drawIBar();
+void show_frame(int frame);
+void show_next_frame();
 
 //// Camera Parameters
 double cam_position[3];
@@ -357,6 +359,21 @@ void drawIBar() {
   glPopMatrix();
 }
 
+void show_frame(int frame) {
+  objects[0].transforms.clear();
+  objects[0].transforms.push_back(animation->ft[frame].translation);
+  objects[0].transforms.push_back(animation->ft[frame].scale);
+  objects[0].transforms.push_back(animation->ft[frame].rotation);
+}
+void show_next_frame() {
+  if (current_frame < animation->number_frames - 1) {
+    ++current_frame;
+  } else {
+    current_frame = 0;
+  }
+  show_frame(current_frame);
+}
+
 std::unique_ptr<Animation> parse_animation(std::ifstream& file_stream) {
   using std::string;
   using std::stringstream;
@@ -425,6 +442,7 @@ int main(int argc, char *argv[]) {
   window_height = yres;
 
   // Parse animation
+  initialize_catmull_rom_B();
   auto animation_up = parse_animation(animation_desc_file_stream);
   animation = animation_up.get();
   animation->interpolate();
