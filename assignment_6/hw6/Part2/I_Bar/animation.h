@@ -69,7 +69,7 @@ class Animation {
       if (keyframes[i] < keyframes[ip1]) {
         du = 1.0 / (keyframes[ip1] - keyframes[i]);
       } else {
-        du = 1.0 / (keyframes[i] + number_frames - keyframes[ip1]);
+        du = 1.0 / (keyframes[ip1] + number_frames - keyframes[i]);
       }
 
       double u = du;
@@ -109,7 +109,7 @@ class Animation {
       if (keyframes[i] < keyframes[ip1]) {
         du = 1.0 / (keyframes[ip1] - keyframes[i]);
       } else {
-        du = 1.0 / (keyframes[i] + number_frames - keyframes[ip1]);
+        du = 1.0 / (keyframes[ip1] + number_frames - keyframes[i]);
       }
 
       double u = du;
@@ -154,7 +154,7 @@ class Animation {
       if (keyframes[i] < keyframes[ip1]) {
         du = 1.0 / (keyframes[ip1] - keyframes[i]);
       } else {
-        du = 1.0 / (keyframes[i] + number_frames - keyframes[ip1]);
+        du = 1.0 / (keyframes[ip1] + number_frames - keyframes[i]);
       }
 
       double u = du;
@@ -164,7 +164,7 @@ class Animation {
            inbetween = (inbetween + 1) % number_frames) {
         // stuff
         Quaternion qu;
-        if (sin(omega) > .00001) {
+        if (sin(omega) > .001) {
           qu = ((sin((1-u)*omega)/sin(omega))*q1)
                + ((sin(u*omega)/sin(omega)) * q2);
         } else {
@@ -181,6 +181,18 @@ class Animation {
     interpolate_scaling();
     interpolate_translation();
     interpolate_rotation();
+  }
+
+  #include <iostream>
+  void print() {
+    using std::cout;
+    using std::endl;
+    for (int f = 0; f < number_frames; ++f) {
+      cout << "Frame" << f << "\t" << endl;
+      cout << "t" << "\t" << ft[f].translation.translation[0] << "\t" << ft[f].translation.translation[1] << "\t" << ft[f].translation.translation[2] << endl;
+      cout << "s" << "\t" << ft[f].scale.scaling[0] << "\t" << ft[f].scale.scaling[1] << "\t" << ft[f].scale.scaling[2] << endl;
+      cout << "r" << "\t" << ft[f].rotation.rotation[0] << "\t" << ft[f].rotation.rotation[1] << "\t" << ft[f].rotation.rotation[2] << "\t" << ft[f].rotation.rotation_angle << endl;
+    }
   }
 };
 

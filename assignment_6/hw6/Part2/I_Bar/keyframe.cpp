@@ -450,6 +450,7 @@ int main(int argc, char *argv[]) {
   auto animation_up = parse_animation(animation_desc_file_stream);
   animation = animation_up.get();
   animation->interpolate();
+  animation->print();
 
   // Set global camera parameters
   // Camera hardcoded
