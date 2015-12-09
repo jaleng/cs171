@@ -365,6 +365,7 @@ void show_frame(int frame) {
   objects[0].transforms.push_back(animation->ft[frame].scale);
   objects[0].transforms.push_back(animation->ft[frame].rotation);
 }
+
 void show_next_frame() {
   if (current_frame < animation->number_frames - 1) {
     ++current_frame;
@@ -467,6 +468,7 @@ int main(int argc, char *argv[]) {
 
   // Put an object in the object vector to represent the I-beam
   objects.emplace_back();
+  show_frame(0);
 
   // Do GL stuff
   glutInit(&argc, argv);
