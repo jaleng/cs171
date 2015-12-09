@@ -5,11 +5,13 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <math.h>
+#include <memory>
 
 #include "PointLight.h"
 #include "Object.h"
 #include "Quaternion.h"
 #include "Arcball.h"
+#include "animation.h"
 
 #define _USE_MATH_DEFINES
 
@@ -58,6 +60,10 @@ Quaternion current_rotation;
 /** Global parameters for user input memory **/
 bool is_pressed = false;
 bool wireframe_mode = false;
+
+/** Animation vars **/
+int current_frame = 0;
+Animation *animation;
 
 /** Initialization of gl, lights, arcball rotation **/
 void init() {
@@ -349,6 +355,61 @@ void drawIBar() {
   glRotatef(90, 0, 1, 0);
   gluCylinder(quadratic, cyRad, cyRad, cyHeight, quadSlices, quadStacks);
   glPopMatrix();
+}
+
+std::unique_ptr<Animation> parse_animation(std::ifstream& file_stream) {
+  using std::string;
+  using std::stringstream;
+
+  string line;
+  getline(file_stream, line);
+  int number_frames = 0;
+  stringstream line_stream{line};
+  line_stream >> number_frames;
+
+  auto animation = std::make_unique<Animation>(number_frames);
+
+  while (!file_stream.eof()) {
+    string line;
+    getline(file_stream, line);
+    if (line.empty()) {
+      break;
+    }
+    int number_frames = 0;
+    stringstream line_stream{line};
+    string token;
+    line_stream >> token;
+    assert(token == "Frame");
+    int frame_number;
+    double x, y, z, theta;
+    line_stream >> frame_number;
+    animation->keyframes.push_back(frame_number);
+
+    getline(file_stream, line);
+    line_stream.str("");
+    line_stream.clear();
+    line_stream << line;
+    line_stream >> token >> x >> y >> z;
+    assert(token == "translation");
+    animation->ft[frame_number].translation.set(x, y, z);
+
+    getline(file_stream, line);
+    line_stream.str("");
+    line_stream.clear();
+    line_stream << line;
+    line_stream >> token >> x >> y >> z;
+    assert(token == "scale");
+    animation->ft[frame_number].scale.set(x, y, z);
+
+    getline(file_stream, line);
+    line_stream.str("");
+    line_stream.clear();
+    line_stream << line;
+    line_stream >> token >> x >> y >> z >> theta;
+    assert(token == "rotation");
+    animation->ft[frame_number].rotation.set(x, y, z, deg2rad(theta));
+  }
+  return std::move(animation);
 }
 
 /** Parse and display a scene with the given window resolution **/
