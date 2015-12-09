@@ -163,8 +163,13 @@ class Animation {
            inbetween != keyframes[ip1];
            inbetween = (inbetween + 1) % number_frames) {
         // stuff
-        auto qu = ((sin((1-u)*omega)/sin(omega))*q1)
-                + ((sin(u*omega)/sin(omega)) * q2);
+        Quaternion qu;
+        if (sin(omega) > .00001) {
+          qu = ((sin((1-u)*omega)/sin(omega))*q1)
+               + ((sin(u*omega)/sin(omega)) * q2);
+        } else {
+          qu = ((1-u) * q1) + (u * q2);
+        }
         auto rotation = qu.getRotation();
         ft[inbetween].rotation = rotation;
         u += du;
