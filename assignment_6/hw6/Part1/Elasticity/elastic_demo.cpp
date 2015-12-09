@@ -363,7 +363,22 @@ void display(void)
          * HINT: this is not that hard; you might even see this as a trick question...
          */
 
+        auto fx = vertices[i].fx;
+        auto fy = vertices[i].fy;
+        auto vxs = vertices[i].vx;
+        auto vys = vertices[i].vy;
+        auto xs = vertices[i].x;
+        auto ys = vertices[i].y;
 
+        auto vxf = tstep*fx+vxs;
+        auto vyf = tstep*fy+vys;
+        auto xf = tstep*tstep*fx+tstep*vxs-xs;
+        auto yf = tstep*tstep*fy+tstep*vys-ys;
+
+        vertices[i].x = xf;
+        vertices[i].y = yf;
+        vertices[i].vx = vxf;
+        vertices[i].vy = vyf;
 
 
 
