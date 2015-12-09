@@ -364,9 +364,9 @@ void drawIBar() {
 
 void show_frame(int frame) {
   objects[0].transforms.clear();
-  objects[0].transforms.push_back(animation->ft[frame].translation);
   objects[0].transforms.push_back(animation->ft[frame].scale);
   objects[0].transforms.push_back(animation->ft[frame].rotation);
+  objects[0].transforms.push_back(animation->ft[frame].translation);
 }
 
 void show_next_frame() {

@@ -191,7 +191,7 @@ class Animation {
       cout << "Frame" << f << "\t" << endl;
       cout << "t" << "\t" << ft[f].translation.translation[0] << "\t" << ft[f].translation.translation[1] << "\t" << ft[f].translation.translation[2] << endl;
       cout << "s" << "\t" << ft[f].scale.scaling[0] << "\t" << ft[f].scale.scaling[1] << "\t" << ft[f].scale.scaling[2] << endl;
-      cout << "r" << "\t" << ft[f].rotation.rotation[0] << "\t" << ft[f].rotation.rotation[1] << "\t" << ft[f].rotation.rotation[2] << "\t" << ft[f].rotation.rotation_angle << endl;
+      cout << "rot" << "\t" << ft[f].rotation.rotation[0] << "\t" << ft[f].rotation.rotation[1] << "\t" << ft[f].rotation.rotation[2] << "\t" << ft[f].rotation.rotation_angle << endl;
     }
   }
 };

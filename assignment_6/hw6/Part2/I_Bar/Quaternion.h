@@ -29,6 +29,10 @@ class Quaternion {
         normalize();
       }
 
+  double norm() {
+    return sqrt(s*s+x*x+y*y+z*z);
+  }
+
   void normalize() {
     auto denom = sqrt(s*s+x*x+y*y+z*z);
     s /= denom;
@@ -83,12 +87,17 @@ class Quaternion {
 
   /** Get Rotation **/
   Transform getRotation() const {
-    double denom = sqrt(1 - s*s);
-    double rx = x / denom;
-    double ry = y / denom;
-    double rz = z / denom;
-    double theta = 2 * acos(s);
-    return Transform(TransformType::ROTATION, x, y, z, theta);
+    auto q = *this;
+    q.normalize();
+    double denom = sqrt(1 - q.s*q.s);
+    double theta = 2 * acos(q.s);
+    if (denom < 0.0001) {
+      return Transform(TransformType::ROTATION, 0, 0, 0, theta);
+    }
+    double rx = q.x / denom;
+    double ry = q.y / denom;
+    double rz = q.z / denom;
+    return Transform(TransformType::ROTATION, rx, ry, rz, theta);
   }
 
   /** Get rotation matrix from quaternion **/
