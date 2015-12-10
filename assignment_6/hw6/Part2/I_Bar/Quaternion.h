@@ -88,11 +88,11 @@ class Quaternion {
   /** Get Rotation **/
   Transform getRotation() const {
     auto q = *this;
-    q.normalize();
+    //q.normalize();
     double denom = sqrt(1 - q.s*q.s);
     double theta = 2 * acos(q.s);
     if (denom < 0.0001) {
-      return Transform(TransformType::ROTATION, 0, 0, 0, theta);
+      return Transform(TransformType::ROTATION, q.x, q.y, q.z, theta);
     }
     double rx = q.x / denom;
     double ry = q.y / denom;
