@@ -21,8 +21,13 @@ LIBS = -lGLEW -lGL -lGLU -lglut -lm
 
 EXENAME = keyframe
 
-all: $(SOURCES) #*.h
-	$(CC) $(FLAGS) $(EXENAME) $(INCLUDE) $(LIBDIR) $(SOURCES) $(LIBS)
+all: keyframe keyframe_smooth
+
+keyframe: keyframe.cpp *.h
+	$(CC) $(FLAGS) keyframe $(INCLUDE) $(LIBDIR) keyframe.cpp $(LIBS)
+
+keyframe_smooth: keyframe_smooth.cpp *.h
+	$(CC) $(FLAGS) keyframe_smooth $(INCLUDE) $(LIBDIR) keyframe_smooth.cpp $(LIBS)
 
 clean:
 	rm -f *.o $(EXENAME)
