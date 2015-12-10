@@ -19,7 +19,7 @@ LIBDIR = -L/usr/X11R6/lib -L/usr/local/lib
 SOURCES = *.cpp
 LIBS = -lGLEW -lGL -lGLU -lglut -lm
 
-EXENAME = keyframe
+EXENAME = keyframe keyframe_smooth
 
 all: keyframe keyframe_smooth
 
