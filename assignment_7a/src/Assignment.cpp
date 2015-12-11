@@ -4,6 +4,7 @@
 
 #include "Scene.hpp"
 #include "UI.hpp"
+#include "model.hpp"
 
 #include <vector>
 
@@ -58,13 +59,14 @@ Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
 }
 
 /** Take a vector of transforms and create a transformation matrix **/
-Matrix<double, 4, 4> tfmvec2mat(const vector<Transform>& tfmvec) {
+Matrix<double, 4, 4> tfmvec2mat(const vector<Transformation>& tfmvec) {
   Matrix<double, 4, 4> mat;
   mat.setIdentity();
   for (auto it = tfmvec.crbegin(); it != tfmvec.crend(); ++it) {
     auto tmp = mat;
     mat = tfm2mat(*it) * tmp;
   }
+  return mat;
 }
 
 // TODO: inside-outside test
