@@ -19,12 +19,12 @@ LIBDIR = -L/usr/X11R6/lib -L/usr/local/lib
 SOURCES = *.cpp
 LIBS = -lGLEW -lGL -lGLU -lglut -lm
 
-EXENAME = keyframe keyframe_smooth
+EXENAME = keyframe_ibar keyframe_smooth
 
-all: keyframe keyframe_smooth
+all: keyframe_ibar keyframe_smooth
 
-keyframe: keyframe.cpp *.h
-	$(CC) $(FLAGS) keyframe $(INCLUDE) $(LIBDIR) keyframe.cpp $(LIBS)
+keyframe_ibar: keyframe_ibar.cpp *.h
+	$(CC) $(FLAGS) keyframe_ibar $(INCLUDE) $(LIBDIR) keyframe_ibar.cpp $(LIBS)
 
 keyframe_smooth: keyframe_smooth.cpp *.h
 	$(CC) $(FLAGS) keyframe_smooth $(INCLUDE) $(LIBDIR) keyframe_smooth.cpp $(LIBS)

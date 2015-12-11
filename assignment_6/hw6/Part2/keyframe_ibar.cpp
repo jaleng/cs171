@@ -436,7 +436,7 @@ std::unique_ptr<Animation> parse_animation(std::ifstream& file_stream) {
 /** Parse and display a scene with the given window resolution **/
 int main(int argc, char *argv[]) {
   // Get cli args:
-  // ./opengl_renderer [scene_description_file.txt] [xres] [yres] [mode]
+  // ./opengl_renderer [scene_description_file.txt] [xres] [yres]
   std::ifstream animation_desc_file_stream{argv[1]};
   int xres = atoi(argv[2]);
   int yres = atoi(argv[3]);
@@ -450,7 +450,6 @@ int main(int argc, char *argv[]) {
   auto animation_up = parse_animation(animation_desc_file_stream);
   animation = animation_up.get();
   animation->interpolate();
-  animation->print();
 
   // Set global camera parameters
   // Camera hardcoded
