@@ -85,7 +85,7 @@ struct PAT{
     : prm{_prm}, tfm{_tfm}{}
 };
 
-// TODO: build vector of primitives traversing tree
+/** Build vector of PATs by traversing tree **/
 std::unique_ptr<vector<PAT>> buildPATs (const Renderable& root, int level=0) {
   auto v = std::make_unique<vector<PAT>>();
   if (level > 20) {
@@ -94,7 +94,6 @@ std::unique_ptr<vector<PAT>> buildPATs (const Renderable& root, int level=0) {
   switch(root.getType()) {
   case PRM:
     {
-    //// TODO: case when renderable is primitive
     Matrix<double, 4, 4> m;
     m.setIdentity();
     v->emplace_back(dynamic_cast<const Primitive&>(root), m);
@@ -102,7 +101,6 @@ std::unique_ptr<vector<PAT>> buildPATs (const Renderable& root, int level=0) {
     }
   case OBJ:
     {
-    //// TODO: case when renderable is Object
     auto obj = dynamic_cast<const Object&>(root);
     auto overall_tfm = tfmvec2mat(obj.getOverallTransformation());
     for (const auto& item : obj.getChildren()) {
