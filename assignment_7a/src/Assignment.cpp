@@ -159,11 +159,12 @@ void Assignment::drawIOTest() {
   if (cur_state) {
     ren = Renderable::get(cur_state->tokens[1]);
   } else {
-    // TODO: draw all blue spheres, or do nothing?
     for(int i = -10; i <= 10; ++i) {
       for (int j = -10; j <= 10; ++j) {
         for (int k = -10; k <= 10; ++k) {
-          draw_blue_sphere(i, j, k);
+          draw_blue_sphere(static_cast<double>(i)/2.0,
+                           static_cast<double>(j)/2.0,
+                           static_cast<double>(k)/2.0);
         }
       }
     }
@@ -177,9 +178,9 @@ void Assignment::drawIOTest() {
     for (int j = -10; j <= 10; ++j) {
       for (int k = -10; k <= 10; ++k) {
         // Do stuff for each (i,j,k)
-        double di = double(i);
-        double dj = double(j);
-        double dk = double(k);
+        auto di = static_cast<double>(i);
+        auto dj = static_cast<double>(j);
+        auto dk = static_cast<double>(k);
         auto inside =  false;
         for (const auto& pat : *pats) {
           // get x,y,z by transforming i,j,k
@@ -187,9 +188,9 @@ void Assignment::drawIOTest() {
           pretfm << di /2.0, dj / 2.0, dk/2.0, 1;
           auto posttfm = pat.tfm.inverse() * pretfm;
           auto w = posttfm(3);
-          auto x = posttfm(0) / w;
-          auto y = posttfm(1) / w;
-          auto z = posttfm(2) / w;
+          auto x = double(posttfm(0)) / w;
+          auto y = double(posttfm(1)) / w;
+          auto z = double(posttfm(2)) / w;
 
           if (sq_io(x, y, z, pat.prm.getExp0(), pat.prm.getExp1()) <= 0) {
             inside = true;
@@ -197,10 +198,8 @@ void Assignment::drawIOTest() {
           }
         }
         if (inside) {
-          // TODO: draw red dot
           draw_red_sphere(di/2.0, dj/2.0, dk/2.0);
         } else {
-          // TODO: draw blue dot
           draw_blue_sphere(di/2.0, dj/2.0, dk/2.0);
         }
       }
