@@ -78,8 +78,8 @@ Matrix<double, 4, 4> tfmvec2mat(const vector<Transformation>& tfmvec) {
  */
 double sq_io(double x, double y, double z, double e, double n) {
   return   pow(pow(x*x, 1.0/e) + pow(y*y, 1.0/e), e/n)
-         + pow(z*z, 1/n)
-         - 1;
+         + pow(z*z, 1.0/n)
+         - 1.0;
 }
 
 struct PAT {
@@ -173,16 +173,20 @@ void Assignment::drawIOTest() {
   // Build vector of PATs by traversing tree
   auto pats = buildPATs(*ren);
 
+  // DEBUG: reduced number of dots to see easier
   for(int i = -10; i <= 10; ++i) {
     for (int j = -10; j <= 10; ++j) {
       for (int k = -10; k <= 10; ++k) {
         // Do stuff for each (i,j,k)
+        double di = double(i);
+        double dj = double(j);
+        double dk = double(k);
         auto inside =  false;
         for (const auto& pat : *pats) {
           // get x,y,z by transforming i,j,k
           Matrix<double, 4, 1> pretfm;
-          pretfm << i, j, k, 1;
-          auto posttfm = pat.tfm * pretfm;
+          pretfm << di /2.0, dj / 2.0, dk/2.0, 1;
+          auto posttfm = pat.tfm.inverse() * pretfm;
           auto w = posttfm(3);
           auto x = posttfm(0) / w;
           auto y = posttfm(1) / w;
@@ -195,10 +199,10 @@ void Assignment::drawIOTest() {
         }
         if (inside) {
           // TODO: draw red dot
-          draw_red_sphere(i, j, k);
+          draw_red_sphere(di/2.0, dj/2.0, dk/2.0);
         } else {
           // TODO: draw blue dot
-          draw_blue_sphere(i, j, k);
+          draw_blue_sphere(di/2.0, dj/2.0, dk/2.0);
         }
       }
     }
