@@ -18,6 +18,7 @@ class Quaternion {
     : s{_s}, x{_x}, y{_y}, z{_z} {
   }
 
+  /* Construct using axis-angle rotation parameters. rotation_param must be true */
   Quaternion(double rx, double ry, double rz,
              double theta, bool rotation_param)
     : s{cos(theta / 2)},
@@ -29,10 +30,12 @@ class Quaternion {
         normalize();
       }
 
+  /** Get norm of quaternion **/
   double norm() {
     return sqrt(s*s+x*x+y*y+z*z);
   }
 
+  /** Normalize quaternion **/
   void normalize() {
     auto denom = sqrt(s*s+x*x+y*y+z*z);
     s /= denom;
@@ -62,6 +65,7 @@ class Quaternion {
     return copy;
   }
 
+  /** Quaternion add-assign **/
   void operator+=(const Quaternion& q) {
     s += q.s;
     x += q.x;
@@ -69,6 +73,7 @@ class Quaternion {
     z += q.z;
   }
 
+  /** Quaternion add **/
   Quaternion operator+(const Quaternion& q) const {
     Quaternion res = *this;
     res += q;
@@ -88,7 +93,6 @@ class Quaternion {
   /** Get Rotation **/
   Transform getRotation() const {
     auto q = *this;
-    //q.normalize();
     double denom = sqrt(1 - q.s*q.s);
     double theta = 2 * acos(q.s);
     if (denom < 0.0001) {
@@ -137,6 +141,7 @@ class Quaternion {
   }
 };
 
+/** Scale quaternion using scalar * quaternion **/
 Quaternion operator*(double scale, const Quaternion& q) {
   return Quaternion(scale*q.s, scale*q.x, scale*q.y, scale*q.z);
 }
