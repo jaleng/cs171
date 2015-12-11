@@ -3,6 +3,9 @@
 
 #include <Eigen/Dense>
 #include "Quaternion.h"
+#include <iostream>
+#include <vector>
+#include "Transforms.h"
 
 Eigen::Matrix<double, 4, 4> catmull_rom_B;
 void initialize_catmull_rom_B() {
@@ -13,8 +16,6 @@ void initialize_catmull_rom_B() {
   catmull_rom_B /= 2;
 }
 
-#include <vector>
-#include "Transforms.h"
 
 class Frame_Transform {
  public:
@@ -183,7 +184,6 @@ class Animation {
     interpolate_rotation();
   }
 
-  #include <iostream>
   void print() {
     using std::cout;
     using std::endl;

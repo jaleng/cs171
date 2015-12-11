@@ -3,6 +3,9 @@
 #include <sstream>
 #include <fstream>
 
+#include <Eigen/Dense>
+#include "animation.h"
+
 using std::vector;
 using std::string;
 using std::stringstream;
@@ -29,6 +32,63 @@ class ShapeAnimation {
   // ctor
   explicit ShapeAnimation(size_t _num_frames)
   : num_frames{_num_frames}, frame_vertices{num_frames} {}
+
+  void interpolateVertices() {
+    using Eigen::Matrix;
+    using Eigen::MatrixXd;
+    for (auto i = 0; i < keyframes.size() - 1; ++i) {
+      initialize_catmull_rom_B();
+
+      // get keyframe indices, at the beginning, treat 0th as i and i-1
+      // at the end, treat last keyframe index as i+1 and i+2
+      int im1 = (i == 0) ? 0 : i - 1;
+      int ip1 = i + 1;
+      int ip2 = (i == keyframes.size() - 2) ? keyframes.size() - 1 : i + 2;
+      // Change keyframe indices to frame numbers
+      int fi = keyframes[i];
+      int fim1 = keyframes[im1];
+      int fip1 = keyframes[ip1];
+      int fip2 = keyframes[ip2];
+
+      int n_vertices = frame_vertices[fi].size();
+      // Build p matrix
+      MatrixXd p(4, 3 * n_vertices);
+      for (int v = 0; v < n_vertices; ++v) {
+        p(0, 3*v) = frame_vertices[fim1][v][0];
+        p(1, 3*v) = frame_vertices[fi  ][v][0];
+        p(2, 3*v) = frame_vertices[fip1][v][0];
+        p(3, 3*v) = frame_vertices[fip2][v][0];
+
+        p(0, 3*v + 1) = frame_vertices[fim1][v][1];
+        p(1, 3*v + 1) = frame_vertices[fi  ][v][1];
+        p(2, 3*v + 1) = frame_vertices[fip1][v][1];
+        p(3, 3*v + 1) = frame_vertices[fip2][v][1];
+
+        p(0, 3*v + 2) = frame_vertices[fim1][v][2];
+        p(1, 3*v + 2) = frame_vertices[fi  ][v][2];
+        p(2, 3*v + 2) = frame_vertices[fip1][v][2];
+        p(3, 3*v + 2) = frame_vertices[fip2][v][2];
+      }
+
+      MatrixXd Bp;
+      Bp = catmull_rom_B * p;
+
+      double du = 1.0 / (fip1 - fi);
+      double u = du;
+      for (int inbetween = fi + 1; inbetween < fip1; ++inbetween) {
+        Matrix<double, 1, 4> u_m;
+        u_m << 1.0, u, u*u, u*u*u;
+        auto interpolated = u_m*Bp;
+        for (int v = 0; v < n_vertices; ++v) {
+          double x = interpolated(0, 3*v);
+          double y = interpolated(0, 3*v + 1);
+          double z = interpolated(0, 3*v + 2);
+          frame_vertices[inbetween].emplace_back(x, y, z);
+        }
+        u += du;
+      }
+    }
+  }
 };
 
 vector<Vertex> readVertices(ifstream& fs) {
@@ -67,7 +127,8 @@ int main(int argc, char *argv[]) {
   ifstream f20 {"bunny20.obj"};
   shape_animation.frame_vertices[20] = readVertices(f20);
 
-  
+  shape_animation.interpolateVertices();
+
   return 0;
 }
 
