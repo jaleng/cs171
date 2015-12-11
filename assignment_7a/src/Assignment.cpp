@@ -4,7 +4,10 @@
 
 #include "Scene.hpp"
 #include "UI.hpp"
-// TODO: transformation -> matrix
+
+#include <vector>
+
+/** Take a Transform and create a transformation matrix **/
 Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
   Matrix<double, 4, 4> mat;
   auto x = tfm.trans[0];
@@ -53,6 +56,17 @@ Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
     break;
   }
 }
+
+/** Take a vector of transforms and create a transformation matrix **/
+Matrix<double, 4, 4> tfmvec2mat(const vector<Transform>& tfmvec) {
+  Matrix<double, 4, 4> mat;
+  mat.setIdentity();
+  for (auto it = tfmvec.crbegin(); it != tfmvec.crend(); ++it) {
+    auto tmp = mat;
+    mat = tfm2mat(*it) * tmp;
+  }
+}
+
 // TODO: inside-outside test
 
 void Assignment::drawIOTest() {
