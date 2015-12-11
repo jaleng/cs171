@@ -71,19 +71,52 @@ Matrix<double, 4, 4> tfmvec2mat(const vector<Transformation>& tfmvec) {
   return mat;
 }
 
-/** Superquadric inside-outside test **/
+/** Superquadric inside-outside test
+ *  < 0 -> inside object
+ *  = 0 -> on object's surface
+ *  > 0 -> outside the object
+ */
 double sq_io(double x, double y, double z, double e, double n) {
   return   pow(pow(x*x, 1.0/e) + pow(y*y, 1.0/e), e/n)
          + pow(z*z, 1/n)
          - 1;
 }
 
-struct PAT{
+struct PAT {
   Primitive prm;
   Matrix<double, 4, 4> tfm;
   PAT(const Primitive& _prm, const Matrix<double, 4, 4> _tfm)
     : prm{_prm}, tfm{_tfm}{}
 };
+
+// TODO: draw blue dot at (x,y,z)
+void draw_blue_sphere(double x, double y, double z) {
+  const float blue_light[3] = {0.0, 0.0, 1.0};
+
+  glMaterialfv(GL_FRONT, GL_AMBIENT, blue_light);
+  glPushMatrix();
+  auto jitter = .03;
+  auto dx = (jitter / 2) - jitter * (rand() / RAND_MAX);
+  auto dy = (jitter / 2) - jitter * (rand() / RAND_MAX);
+  auto dz = (jitter / 2) - jitter * (rand() / RAND_MAX);
+  glTranslated(x + dx, y + dy, z + dz);
+  glutSolidSphere(0.03, 5, 5);
+  glPopMatrix();
+}
+
+// TODO: draw red dot at (x,y,z)
+void draw_red_sphere(double x, double y, double z) {
+  const float red_light[3] = {1.0, 0.0, 0.0};
+  glMaterialfv(GL_FRONT, GL_AMBIENT, red_light);
+  glPushMatrix();
+  auto jitter = .03;
+  auto dx = (jitter / 2) - jitter * (rand() / RAND_MAX);
+  auto dy = (jitter / 2) - jitter * (rand() / RAND_MAX);
+  auto dz = (jitter / 2) - jitter * (rand() / RAND_MAX);
+  glTranslated(x + dx, y + dy, z + dz);
+  glutSolidSphere(0.03, 5, 5);
+  glPopMatrix();
+}
 
 /** Build vector of PATs by traversing tree **/
 std::unique_ptr<vector<PAT>> buildPATs (const Renderable& root, int level=0) {
@@ -121,23 +154,52 @@ std::unique_ptr<vector<PAT>> buildPATs (const Renderable& root, int level=0) {
 }
 
 void Assignment::drawIOTest() {
-  // TODO: Build vector of primitives by traversing tree
+  const Line* cur_state = CommandLine::getState();
+  Renderable* ren = nullptr;
+  if (cur_state) {
+    ren = Renderable::get(cur_state->tokens[1]);
+  } else {
+    // TODO: draw all blue spheres, or do nothing?
+    for(int i = -10; i <= 10; ++i) {
+      for (int j = -10; j <= 10; ++j) {
+        for (int k = -10; k <= 10; ++k) {
+          draw_blue_sphere(i, j, k);
+        }
+      }
+    }
+    return;
+  }
+
+  // Build vector of PATs by traversing tree
+  auto pats = buildPATs(*ren);
 
   for(int i = -10; i <= 10; ++i) {
     for (int j = -10; j <= 10; ++j) {
       for (int k = -10; k <= 10; ++k) {
         // Do stuff for each (i,j,k)
+        auto inside =  false;
+        for (const auto& pat : *pats) {
+          // get x,y,z by transforming i,j,k
+          Matrix<double, 4, 1> pretfm;
+          pretfm << i, j, k, 1;
+          auto posttfm = pat.tfm * pretfm;
+          auto w = posttfm(3);
+          auto x = posttfm(0) / w;
+          auto y = posttfm(1) / w;
+          auto z = posttfm(2) / w;
 
-        /* TODO:
-          inside = false
-          For each primitive:
-            if point inside primitive:
-              inside = true;
-              draw red point
-              break;
-          if not inside:
-            draw blue point
-         */
+          if (sq_io(x, y, z, pat.prm.getExp0(), pat.prm.getExp1()) <= 0) {
+            inside = true;
+            break;
+          }
+        }
+        if (inside) {
+          // TODO: draw red dot
+          draw_red_sphere(i, j, k);
+        } else {
+          // TODO: draw blue dot
+          draw_blue_sphere(i, j, k);
+        }
       }
     }
   }
