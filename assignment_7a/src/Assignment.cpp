@@ -64,7 +64,7 @@ Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
 Matrix<double, 4, 4> tfmvec2mat(const vector<Transformation>& tfmvec) {
   Matrix<double, 4, 4> mat;
   mat.setIdentity();
-  for (auto it = tfmvec.crbegin(); it != tfmvec.crend(); ++it) {
+  for (auto it = tfmvec.cbegin(); it != tfmvec.cend(); ++it) {
     auto tmp = mat;
     mat = tfm2mat(*it) * tmp;
   }
@@ -173,7 +173,6 @@ void Assignment::drawIOTest() {
   // Build vector of PATs by traversing tree
   auto pats = buildPATs(*ren);
 
-  // DEBUG: reduced number of dots to see easier
   for(int i = -10; i <= 10; ++i) {
     for (int j = -10; j <= 10; ++j) {
       for (int k = -10; k <= 10; ++k) {
