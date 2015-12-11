@@ -187,8 +187,9 @@ class Animation {
       for (int inbetween = (fi + 1) % number_frames;
            inbetween != fip1;
            inbetween = (inbetween + 1) % number_frames) {
-        // stuff
         Quaternion qu;
+        // if sin(omega) close to zero, use the limit formula sin(omega)->0
+        // to prevent numerical error
         if (sin(omega) > .001) {
           qu = ((sin((1-u)*omega)/sin(omega))*q1)
                + ((sin(u*omega)/sin(omega)) * q2);
