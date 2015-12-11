@@ -3,16 +3,7 @@
  * Written by Kevin (Kevli) Li (Class of 2016)
  *
  * This program is meant to simulate a 2D double spring pendulum using the
- * discrete Lagrangian. The main part of the program that you need to worry
- * about is marked with a TODO, though you may need to skim through the file
- * to find the variables that you need to know in order to do the TODO. You
- * should not need to edit any other part of this file other than the TODO.
- *
- * The file has no comments because the logic is exactly the same as the
- * logic in single_spring_pendulum.cpp. The only difference is that we
- * added a second pendulum bob. All the additions for the second pendulum
- * are designated with a "2" after their names. Please refer to the single
- * spring pendulum file for details.
+ * discrete Lagrangian.
  */
 
 #include <GL/glew.h>
@@ -206,81 +197,49 @@ void update_path()
 
 void update_pendulums()
 {
-    /******************************* TODO *******************************/
+    //// update m1.x, m1.y, m1.px, m1.py,
+    ////        m2.x, m2.y, m2.px, m2.py
 
-    /* Your task is to write some lines of code to update:
-     * 
-     *     m1.x
-     *     m1.y
-     *     m1.px
-     *     m1.py
-     *
-     *     m2.x
-     *     m2.y
-     *     m2.px
-     *     m2.py
-     *
-     * (not necessarily in that order)
-     * To start, you should write the continuous Lagrangian for the spring
-     * pendulum system. Then, you should write the discrete analog. From
-     * there, use the discrete Euler-Lagrangian equations to solve for
-     * the correct update rules.
-     *
-     * The variables that you'll need (in addition to the above-listed
-     * ones) are:
-     *
-     *     dt
-     *     m1.m
-     *     m1.k
-     *     m1.rl
-     *     m2.m
-     *     m2.k
-     *     m2.rl
-     *     g
-     * 
-     */
+    auto x1s = m1.x;
+    auto y1s = m1.y;
+    auto x2s = m2.x;
+    auto y2s = m2.y;
+    auto px1s = m1.px;
+    auto py1s = m1.py;
+    auto px2s = m2.px;
+    auto py2s = m2.py;
+    auto l1 = m1.rl;
+    auto l2 = m2.rl;
+    auto k1 = m1.k;
+    auto k2 = m2.k;
 
-  auto x1s = m1.x;
-  auto y1s = m1.y;
-  auto x2s = m2.x;
-  auto y2s = m2.y;
-  auto px1s = m1.px;
-  auto py1s = m1.py;
-  auto px2s = m2.px;
-  auto py2s = m2.py;
-  auto l1 = m1.rl;
-  auto l2 = m2.rl;
-  auto k1 = m1.k;
-  auto k2 = m2.k;
+    // Sqrt[x1s^2+y1s^2]
+    auto sqrtx1y1 = sqrt(x1s*x1s+y1s*y1s);
+    // Sqrt[(-x1s+x2s)^2+(-y1s+y2s)^2]
+    auto sqrtx2mx1y2my1 = sqrt((x2s-x1s)*(x2s-x1s)+(y2s-y1s)*(y2s-y1s));
 
-  // Sqrt[x1s^2+y1s^2]
-  auto sqrtx1y1 = sqrt(x1s*x1s+y1s*y1s);
-  // Sqrt[(-x1s+x2s)^2+(-y1s+y2s)^2]
-  auto sqrtx2mx1y2my1 = sqrt((x2s-x1s)*(x2s-x1s)+(y2s-y1s)*(y2s-y1s));
+    // formulas pasted from Mathematica and altered for syntax and use
+    // of the above calculated values
+    auto px1_next = -((-dt*k2*l2*x1s*sqrtx1y1+dt*k2*l2*x2s*sqrtx1y1-dt*k1*l1*x1s*sqrtx2mx1y2my1-px1s*sqrtx1y1*sqrtx2mx1y2my1+dt*k1*x1s*sqrtx1y1*sqrtx2mx1y2my1+dt*k2*x1s*sqrtx1y1*sqrtx2mx1y2my1-dt*k2*x2s*sqrtx1y1*sqrtx2mx1y2my1)/(sqrtx1y1*sqrtx2mx1y2my1));
+    auto px2_next = px2s-(dt*k2*(-x1s+x2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1;
+    auto py1_next = dt*g*m1.m+py1s-(dt*k1*y1s*(-l1+sqrtx1y1))/sqrtx1y1+(dt*k2*(-y1s+y2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1;
+    auto py2_next = dt*g*m2.m+py2s-(dt*k2*(-y1s+y2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1;
+    auto x1_next = (dt*(px1s+(m1.m*x1s)/dt-(dt*k1*x1s*(-l1+sqrtx1y1))/sqrtx1y1+(dt*k2*(-x1s+x2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1))/m1.m;
+    auto x2_next = (dt*(px2s+(m2.m*x2s)/dt-(dt*k2*(-x1s+x2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1))/m2.m;
+    auto y1_next = (dt*(dt*g*m1.m+py1s+(m1.m*y1s)/dt-(dt*k1*y1s*(-l1+sqrtx1y1))/sqrtx1y1+(dt*k2*(-y1s+y2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1))/m1.m;
+    auto y2_next = (dt*(dt*g*m2.m+py2s+(m2.m*y2s)/dt-(dt*k2*(-y1s+y2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1))/m2.m;
 
+    m1.px = px1_next;
+    m2.px = px2_next;
 
-  auto px1_next = -((-dt*k2*l2*x1s*sqrtx1y1+dt*k2*l2*x2s*sqrtx1y1-dt*k1*l1*x1s*sqrtx2mx1y2my1-px1s*sqrtx1y1*sqrtx2mx1y2my1+dt*k1*x1s*sqrtx1y1*sqrtx2mx1y2my1+dt*k2*x1s*sqrtx1y1*sqrtx2mx1y2my1-dt*k2*x2s*sqrtx1y1*sqrtx2mx1y2my1)/(sqrtx1y1*sqrtx2mx1y2my1));
-  auto px2_next = px2s-(dt*k2*(-x1s+x2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1;
-  auto py1_next = dt*g*m1.m+py1s-(dt*k1*y1s*(-l1+sqrtx1y1))/sqrtx1y1+(dt*k2*(-y1s+y2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1;
-  auto py2_next = dt*g*m2.m+py2s-(dt*k2*(-y1s+y2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1;
-  auto x1_next = (dt*(px1s+(m1.m*x1s)/dt-(dt*k1*x1s*(-l1+sqrtx1y1))/sqrtx1y1+(dt*k2*(-x1s+x2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1))/m1.m;
-  auto x2_next = (dt*(px2s+(m2.m*x2s)/dt-(dt*k2*(-x1s+x2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1))/m2.m;
-  auto y1_next = (dt*(dt*g*m1.m+py1s+(m1.m*y1s)/dt-(dt*k1*y1s*(-l1+sqrtx1y1))/sqrtx1y1+(dt*k2*(-y1s+y2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1))/m1.m;
-  auto y2_next = (dt*(dt*g*m2.m+py2s+(m2.m*y2s)/dt-(dt*k2*(-y1s+y2s)*(-l2+sqrtx2mx1y2my1))/sqrtx2mx1y2my1))/m2.m;
+    m1.py = py1_next;
+    m2.py = py2_next;
 
-  m1.px = px1_next;
-  m2.px = px2_next;
+    m1.x = x1_next;
+    m2.x = x2_next;
 
-  m1.py = py1_next;
-  m2.py = py2_next;
-
-  m1.x = x1_next;
-  m2.x = x2_next;
-
-  m1.y = y1_next;
-  m2.y = y2_next;
-
-    /****************************** END TODO ****************************/
+    m1.y = y1_next;
+    m2.y = y2_next;
 
     t += dt;
 }
