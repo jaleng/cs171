@@ -12,6 +12,7 @@ using std::string;
 using std::stringstream;
 using std::ifstream;
 
+/** Simple class to hold vertex components **/
 class Vertex {
  public:
   double pos[3];
@@ -23,7 +24,7 @@ class Vertex {
   }
 };
 
-
+/** Hold vertex info for each frame in a shape animation **/
 class ShapeAnimation {
  public:
   size_t num_frames;
@@ -34,6 +35,7 @@ class ShapeAnimation {
   explicit ShapeAnimation(size_t _num_frames)
   : num_frames{_num_frames}, frame_vertices{num_frames} {}
 
+  /** Interpolate vertices from keyframes **/
   void interpolateVertices() {
     using Eigen::Matrix;
     using Eigen::MatrixXd;
@@ -92,6 +94,10 @@ class ShapeAnimation {
   }
 };
 
+/** Check if interpolation is correct.
+ * Very specific to the bunny test case.
+ * Assumes obj files are in the same directory.
+ */
 bool checkInterpolated(ShapeAnimation& sa) {
   using std::ifstream;
   using std::string;
@@ -155,6 +161,7 @@ bool checkInterpolated(ShapeAnimation& sa) {
   return true;
 }
 
+/** Read Vertices from obj file **/
 vector<Vertex> readVertices(ifstream& fs) {
   vector<Vertex> res;
   string line;
