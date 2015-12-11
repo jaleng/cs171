@@ -2,6 +2,7 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <iostream>
 
 #include <Eigen/Dense>
 #include "animation.h"
@@ -91,6 +92,69 @@ class ShapeAnimation {
   }
 };
 
+bool checkInterpolated(ShapeAnimation& sa) {
+  using std::ifstream;
+  using std::string;
+  using std::vector;
+
+  vector<string> filenames {"",
+                            "bunny01.obj",
+                            "bunny02.obj",
+                            "bunny03.obj",
+                            "bunny04.obj",
+                            "",
+                            "bunny06.obj",
+                            "bunny07.obj",
+                            "bunny08.obj",
+                            "bunny09.obj",
+                            "",
+                            "bunny11.obj",
+                            "bunny12.obj",
+                            "bunny13.obj",
+                            "bunny14.obj",
+                            "",
+                            "bunny16.obj",
+                            "bunny17.obj",
+                            "bunny18.obj",
+                            "bunny19.obj"};
+
+  for (int i = 0; i < filenames.size(); ++i) {
+    if (filenames[i].empty()) {
+      continue;
+    }
+
+    ifstream fs{filenames[i]};
+    int v = 0;
+    while (!fs.eof()) {
+      string line;
+      getline(fs, line);
+      if (line.empty()) {
+        break;
+      }
+      stringstream linestream{line};
+      string token;
+      linestream >> token;
+      if (token == "v") {
+        double expectedx, expectedy, expectedz;
+        linestream >> expectedx >> expectedy >> expectedz;
+        double x = sa.frame_vertices[i][v][0];
+        double y = sa.frame_vertices[i][v][1];
+        double z = sa.frame_vertices[i][v][2];
+        if (abs(x - expectedx) > .001
+            || abs(y - expectedy) > .001
+            || abs(z - expectedz) > .001) {
+          return false;
+        }
+        ++v;
+        // dfasdfdsafdsf
+      } else {
+        break;
+      }
+    }
+  }
+  return true;
+}
+
 vector<Vertex> readVertices(ifstream& fs) {
   vector<Vertex> res;
   string line;
@@ -128,6 +192,12 @@ int main(int argc, char *argv[]) {
   shape_animation.frame_vertices[20] = readVertices(f20);
 
   shape_animation.interpolateVertices();
+
+  if (checkInterpolated(shape_animation)) {
+    std::cout << "CORRECT: interpolated frames match\n";
+  } else {
+    std::cout << "INCORRECT: interpolated frames do not match\n";
+  }
 
   return 0;
 }
