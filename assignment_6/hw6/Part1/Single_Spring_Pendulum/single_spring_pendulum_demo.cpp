@@ -3,14 +3,7 @@
  * Written by Kevin (Kevli) Li (Class of 2016)
  *
  * This program is meant to simulate a 2D spring pendulum using the discrete
- * Lagrangian. The main part of the program that you need to worry about is
- * marked with a TODO, though you may need to skim through the file to find
- * the variables that you need to know in order to do the TODO. You should not
- * need to edit any other part of this file other than the TODO.
- *
- * The file is sparsely commented since you are not required to understand
- * everything in this program. If you have any questions, feel free to send
- * me an email.
+ * Lagrangian.
  */
 
 /* Usual includes and namespaces */
@@ -217,78 +210,40 @@ void update_path()
 
 void update_pendulum()
 {
-    /******************************* TODO *******************************/
+    // update m1.x, m1.y, m1.px, m1.py
+    auto sqrtx2py2 = sqrt(m1.x*m1.x + m1.y*m1.y);
+    auto px_next =
+      - (-dt * m1.k * m1.rl * m1.x
+         - m1.px * sqrtx2py2
+         + dt * m1.k * m1.x * sqrtx2py2
+        )
+      / sqrtx2py2;
 
-    /* Your task is to write some lines of code to update:
-     * 
-     *     m1.x
-     *     m1.y
-     *     m1.px
-     *     m1.py
-     *
-     * (not necessarily in that order)
-     * To start, you should write the continuous Lagrangian for the spring
-     * pendulum system. Then, you should write the discrete analog. From
-     * there, use the discrete Euler-Lagrangian equations to solve for
-     * the correct update rules.
-     *
-     * The variables that you'll need (in addition to the above-listed
-     * ones) are:
-     *
-     *     dt
-     *     m1.m
-     *     m1.k
-     *     m1.rl
-     *     g
-     * 
-     */
+    auto x_next =
+        ((dt * m1.px) / m1.m)
+      + m1.x
+      - ((dt * dt * m1.k * m1.x) / m1.m)
+      + ((dt * dt * m1.k * m1.rl * m1.x) / (m1.m * sqrtx2py2));
 
-  auto sqrtx2py2 = sqrt(m1.x*m1.x + m1.y*m1.y);
-  auto px_next =
-    - (-dt * m1.k * m1.rl * m1.x
-       - m1.px * sqrtx2py2
-       + dt * m1.k * m1.x * sqrtx2py2
-      )
-    / sqrtx2py2;
+    auto py_next =
+      - ( -dt * m1.k * m1.rl * m1.y
+          -dt * g * m1.m * sqrtx2py2
+          -m1.py * sqrtx2py2
+          +dt * m1.k * m1.y * sqrtx2py2
+        )
+      / (sqrtx2py2);
 
-  auto x_next =
-      ((dt * m1.px) / m1.m)
-    + m1.x
-    - ((dt * dt * m1.k * m1.x) / m1.m)
-    + ((dt * dt * m1.k * m1.rl * m1.x) / (m1.m * sqrtx2py2));
+    auto y_next =
+      dt * dt * g
+      + (dt * m1.py) / m1.m
+      + m1.y
+      - (dt * dt * m1.k * m1.y) / m1.m
+      + (dt * dt * m1.k * m1.rl * m1.y) / (m1.m * sqrtx2py2);
 
-  auto py_next =
-    - ( -dt * m1.k * m1.rl * m1.y
-        -dt * g * m1.m * sqrtx2py2
-        -m1.py * sqrtx2py2
-        +dt * m1.k * m1.y * sqrtx2py2
-      )
-    / (sqrtx2py2);
-
-  auto y_next =
-    dt * dt * g
-    + (dt * m1.py) / m1.m
-    + m1.y
-    - (dt * dt * m1.k * m1.y) / m1.m
-    + (dt * dt * m1.k * m1.rl * m1.y) / (m1.m * sqrtx2py2);
-
-  m1.px = px_next;
-  m1.x = x_next;
-  m1.py = py_next;
-  m1.y = y_next;
-
-
-
-
-
-
-
-
-
-
-
-
-    /****************************** END TODO ****************************/
+    m1.px = px_next;
+    m1.x = x_next;
+    m1.py = py_next;
+    m1.y = y_next;
 
     t += dt;
 }
