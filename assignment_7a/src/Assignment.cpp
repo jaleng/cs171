@@ -7,6 +7,7 @@
 #include "model.hpp"
 
 #include <vector>
+#include <memory>
 
 /** Take a Transform and create a transformation matrix **/
 Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
@@ -56,6 +57,7 @@ Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
 
     break;
   }
+  return mat;
 }
 
 /** Take a vector of transforms and create a transformation matrix **/
@@ -77,39 +79,47 @@ double sq_io(double x, double y, double z, double e, double n) {
 }
 
 struct PAT{
-  Primitive prm
+  Primitive prm;
   Matrix<double, 4, 4> tfm;
+  PAT(const Primitive& _prm, const Matrix<double, 4, 4> _tfm)
+    : prm{_prm}, tfm{_tfm}{}
 };
 
 // TODO: build vector of primitives traversing tree
-std::unique_ptr<vector<PrimAndTfm>> buildPATs (const Renderable& root, int level=0) {
-  vector<PAT> v;
+std::unique_ptr<vector<PAT>> buildPATs (const Renderable& root, int level=0) {
+  auto v = std::make_unique<vector<PAT>>();
   if (level > 20) {
-    return std::move(v)
+    return std::move(v);
   }
   switch(root.getType()) {
   case PRM:
+    {
     //// TODO: case when renderable is primitive
     Matrix<double, 4, 4> m;
     m.setIdentity();
-    v.emplace_back(dynamic_cast<Primitive>(root), m);
+    v->emplace_back(dynamic_cast<const Primitive&>(root), m);
     break;
+    }
   case OBJ:
+    {
     //// TODO: case when renderable is Object
-    auto overall_tfm = tfmvec2mat(root.getOverallTransformation());
-    for (const auto& item : root.getChildren()) {
-      auto child = item.second();
+    auto obj = dynamic_cast<const Object&>(root);
+    auto overall_tfm = tfmvec2mat(obj.getOverallTransformation());
+    for (const auto& item : obj.getChildren()) {
+      auto child = item.second;
       auto child_tfm = tfmvec2mat(child.transformations);
-      auto child_made_pat_vec = buildPATs(child, level + 1);
-      for (auto& child_made_pat : child_made_pat_vec) {
-        v.push_back(overall_tfm * child_tfm * child_made_pat.tfm);
+      auto child_made_pat_vec = buildPATs(*Renderable::get(child.name), level + 1);
+      for (auto& child_made_pat : *child_made_pat_vec) {
+        v->emplace_back(child_made_pat.prm, overall_tfm * child_tfm * child_made_pat.tfm);
       }
+    }
     }
     break;
   case MSH:
     assert(false);
     break;
   }
+  return std::move(v);
 }
 
 void Assignment::drawIOTest() {

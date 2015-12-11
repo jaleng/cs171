@@ -4,7 +4,7 @@
 ###############################################################################
 
 CC = g++
-FLAGS = -Wall -g -std=c++11
+FLAGS = -Wall -g -std=c++14
 LDFLAGS = -L/usr/X11R6/lib -L/usr/local/lib
 LDLIBS = -lGLEW -lGL -lGLU -lglut
 INCLUDE = -I../lib -I/usr/include -I/usr/X11R6/include -I/usr/include/GL -I../..
