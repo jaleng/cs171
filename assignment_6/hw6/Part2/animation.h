@@ -7,7 +7,10 @@
 #include <vector>
 #include "Transforms.h"
 
+/** Matrix to make Catmull-Rom splines **/
 Eigen::Matrix<double, 4, 4> catmull_rom_B;
+
+/** Initialize Catmull-Rom matrix **/
 void initialize_catmull_rom_B() {
   catmull_rom_B << 0, 2, 0, 0,
                   -1, 0, 1, 0,
@@ -16,7 +19,7 @@ void initialize_catmull_rom_B() {
   catmull_rom_B /= 2;
 }
 
-
+/** Holds transforms for a frame **/
 class Frame_Transform {
  public:
   Transform translation;
@@ -30,17 +33,22 @@ class Frame_Transform {
       {}
 };
 
-int wrap(int a, int b) {
-  while (a < 0) {
-    a += b;
+/** Function to wrap indices after incrementing **/
+int wrap(int i, int size) {
+  while (i < 0) {
+    i += size;
   }
-  return a % b;
+  return i % size;
 }
 
+/** Holds transformations for keyframes and inbetweens **/
 class Animation {
  public:
+  /** list of keyframes indices **/
   std::vector<int> keyframes;
+  /** Total number of frames of animation (keyframes + inbetweens) **/
   int number_frames;
+  /** Transforms for each frame **/
   std::vector<Frame_Transform> ft;
 
   // ctor
@@ -49,38 +57,46 @@ class Animation {
     ft{static_cast<size_t>(_number_frames)}
     {}
 
+  /** Interpolate scaling transformations using Catmull-Rom splines **/
   void interpolate_scaling() {
     using Eigen::Matrix;
     for (auto i = 0; i < keyframes.size(); ++i) {
+      // Get the indices of the keyframes to be used to make cardinal spline
       int im1 = wrap((i - 1), keyframes.size());
       int ip1 = wrap((i + 1), keyframes.size());
       int ip2 = wrap((i + 2), keyframes.size());
-      if (keyframes[i] == keyframes[ip1]) {
+      // Get frame numbers
+      int fim1 = keyframes[im1];
+      int fi   = keyframes[i  ];
+      int fip1 = keyframes[ip1];
+      int fip2 = keyframes[ip2];
+      if (fi == fip1) {
         continue;
       }
       // Build p matrix
       Matrix<double, 4, 3> p;
-      p << ft[keyframes[im1]].scale.scaling[0], ft[keyframes[im1]].scale.scaling[1], ft[keyframes[im1]].scale.scaling[2],
-           ft[keyframes[i  ]].scale.scaling[0], ft[keyframes[i  ]].scale.scaling[1], ft[keyframes[i  ]].scale.scaling[2],
-           ft[keyframes[ip1]].scale.scaling[0], ft[keyframes[ip1]].scale.scaling[1], ft[keyframes[ip1]].scale.scaling[2],
-           ft[keyframes[ip2]].scale.scaling[0], ft[keyframes[ip2]].scale.scaling[1], ft[keyframes[ip2]].scale.scaling[2];
+      p << ft[fim1].scale.scaling[0], ft[fim1].scale.scaling[1], ft[fim1].scale.scaling[2],
+           ft[fi  ].scale.scaling[0], ft[fi  ].scale.scaling[1], ft[fi  ].scale.scaling[2],
+           ft[fip1].scale.scaling[0], ft[fip1].scale.scaling[1], ft[fip1].scale.scaling[2],
+           ft[fip2].scale.scaling[0], ft[fip2].scale.scaling[1], ft[fip2].scale.scaling[2];
       Matrix<double, 4, 3> Bp;
       Bp = catmull_rom_B * p;
       double du = 0;
-      if (keyframes[i] < keyframes[ip1]) {
-        du = 1.0 / (keyframes[ip1] - keyframes[i]);
+      if (keyframes[i] < fip1) {
+        du = 1.0 / (fip1 - keyframes[i]);
       } else {
-        du = 1.0 / (keyframes[ip1] + number_frames - keyframes[i]);
+        du = 1.0 / (fip1 + number_frames - keyframes[i]);
       }
 
       double u = du;
       for (int inbetween = (keyframes[i] + 1) % number_frames;
-           inbetween != keyframes[ip1];
+           inbetween != fip1;
            inbetween = (inbetween + 1) % number_frames) {
         Matrix<double, 1, 4> u_m;
         u_m << 1.0, u, u*u, u*u*u;
         Matrix<double, 1, 3> new_scale;
         new_scale = u_m*Bp;
+        // Set the inbetween to have the interpolated transformation
         ft[inbetween].scale.scaling[0] = new_scale(0, 0);
         ft[inbetween].scale.scaling[1] = new_scale(0, 1);
         ft[inbetween].scale.scaling[2] = new_scale(0, 2);
@@ -89,38 +105,45 @@ class Animation {
     }
   }
 
+  /** Interpolate translations using Catmull-Rom splines **/
   void interpolate_translation() {
     using Eigen::Matrix;
     for (auto i = 0; i < keyframes.size(); ++i) {
       int im1 = wrap((i - 1), keyframes.size());
       int ip1 = wrap((i + 1), keyframes.size());
       int ip2 = wrap((i + 2), keyframes.size());
-      if (keyframes[i] == keyframes[ip1]) {
+      // Get frame numbers
+      int fim1 = keyframes[im1];
+      int fi   = keyframes[i  ];
+      int fip1 = keyframes[ip1];
+      int fip2 = keyframes[ip2];
+      if (fi == fip1) {
         continue;
       }
       // Build p matrix
       Matrix<double, 4, 3> p;
-      p << ft[keyframes[im1]].translation.translation[0], ft[keyframes[im1]].translation.translation[1], ft[keyframes[im1]].translation.translation[2],
-           ft[keyframes[i  ]].translation.translation[0], ft[keyframes[i  ]].translation.translation[1], ft[keyframes[i  ]].translation.translation[2],
-           ft[keyframes[ip1]].translation.translation[0], ft[keyframes[ip1]].translation.translation[1], ft[keyframes[ip1]].translation.translation[2],
-           ft[keyframes[ip2]].translation.translation[0], ft[keyframes[ip2]].translation.translation[1], ft[keyframes[ip2]].translation.translation[2];
+      p << ft[fim1].translation.translation[0], ft[fim1].translation.translation[1], ft[fim1].translation.translation[2],
+           ft[fi  ].translation.translation[0], ft[fi  ].translation.translation[1], ft[fi  ].translation.translation[2],
+           ft[fip1].translation.translation[0], ft[fip1].translation.translation[1], ft[fip1].translation.translation[2],
+           ft[fip2].translation.translation[0], ft[fip2].translation.translation[1], ft[fip2].translation.translation[2];
       Matrix<double, 4, 3> Bp;
       Bp = catmull_rom_B * p;
       double du = 0;
-      if (keyframes[i] < keyframes[ip1]) {
-        du = 1.0 / (keyframes[ip1] - keyframes[i]);
+      if (keyframes[i] < fip1) {
+        du = 1.0 / (fip1 - keyframes[i]);
       } else {
-        du = 1.0 / (keyframes[ip1] + number_frames - keyframes[i]);
+        du = 1.0 / (fip1 + number_frames - keyframes[i]);
       }
 
       double u = du;
       for (int inbetween = (keyframes[i] + 1) % number_frames;
-           inbetween != keyframes[ip1];
+           inbetween != fip1;
            inbetween = (inbetween + 1) % number_frames) {
         Matrix<double, 1, 4> u_m;
         u_m << 1.0, u, u*u, u*u*u;
         Matrix<double, 1, 3> new_translation;
         new_translation = u_m*Bp;
+        // Set the inbetween to have the interpolated transformation
         ft[inbetween].translation.translation[0] = new_translation(0, 0);
         ft[inbetween].translation.translation[1] = new_translation(0, 1);
         ft[inbetween].translation.translation[2] = new_translation(0, 2);
@@ -129,39 +152,40 @@ class Animation {
     }
   }
 
+  /** Interpolate rotations using SLERP **/
   void interpolate_rotation() {
     using Eigen::Matrix;
     for (auto i = 0; i < keyframes.size(); ++i) {
       int ip1 = wrap((i + 1), keyframes.size());
-      if (keyframes[i] == keyframes[ip1]) {
+      int fi = keyframes[i];
+      int fip1 = keyframes[ip1];
+      if (fi == fip1) {
         continue;
       }
       // Get q1
-      auto q1 = Quaternion{ft[keyframes[i]].rotation.rotation[0],
-                           ft[keyframes[i]].rotation.rotation[1],
-                           ft[keyframes[i]].rotation.rotation[2],
-                           ft[keyframes[i]].rotation.rotation_angle,
+      auto q1 = Quaternion{ft[fi].rotation.rotation[0],
+                           ft[fi].rotation.rotation[1],
+                           ft[fi].rotation.rotation[2],
+                           ft[fi].rotation.rotation_angle,
                            true};
 
       // Get q2
-      auto q2 = Quaternion{ft[keyframes[ip1]].rotation.rotation[0],
-                           ft[keyframes[ip1]].rotation.rotation[1],
-                           ft[keyframes[ip1]].rotation.rotation[2],
-                           ft[keyframes[ip1]].rotation.rotation_angle,
+      auto q2 = Quaternion{ft[fip1].rotation.rotation[0],
+                           ft[fip1].rotation.rotation[1],
+                           ft[fip1].rotation.rotation[2],
+                           ft[fip1].rotation.rotation_angle,
                            true};
-
-      // for each inbetween
       double du = 0;
-      if (keyframes[i] < keyframes[ip1]) {
-        du = 1.0 / (keyframes[ip1] - keyframes[i]);
+      if (fi < fip1) {
+        du = 1.0 / (fip1 - fi);
       } else {
-        du = 1.0 / (keyframes[ip1] + number_frames - keyframes[i]);
+        du = 1.0 / (fip1 + number_frames - fi);
       }
 
       double u = du;
       double omega = acos(q1.dot(q2));
-      for (int inbetween = (keyframes[i] + 1) % number_frames;
-           inbetween != keyframes[ip1];
+      for (int inbetween = (fi + 1) % number_frames;
+           inbetween != fip1;
            inbetween = (inbetween + 1) % number_frames) {
         // stuff
         Quaternion qu;
@@ -178,12 +202,14 @@ class Animation {
     }
   }
 
+  /** Interpolate translations, scalings, rotations **/
   void interpolate() {
     interpolate_scaling();
     interpolate_translation();
     interpolate_rotation();
   }
 
+  /** Print transformations. For debugging purposes **/
   void print() {
     using std::cout;
     using std::endl;
