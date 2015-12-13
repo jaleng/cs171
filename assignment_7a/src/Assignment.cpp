@@ -89,7 +89,7 @@ struct PAT {
     : prm{_prm}, tfm{_tfm}{}
 };
 
-// TODO: draw blue dot at (x,y,z)
+// draw blue dot at (x,y,z)
 void draw_blue_sphere(double x, double y, double z) {
   const float blue_light[3] = {0.0, 0.0, 1.0};
 
@@ -104,7 +104,7 @@ void draw_blue_sphere(double x, double y, double z) {
   glPopMatrix();
 }
 
-// TODO: draw red dot at (x,y,z)
+// draw red dot at (x,y,z)
 void draw_red_sphere(double x, double y, double z) {
   const float red_light[3] = {1.0, 0.0, 0.0};
   glMaterialfv(GL_FRONT, GL_AMBIENT, red_light);
@@ -154,6 +154,17 @@ std::unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {
   return std::move(v);
 }
 
+std::unique_ptr<vector<PAT>> getpats() {
+  const Line* cur_state = CommandLine::getState();
+  Renderable* ren = nullptr;
+  if (cur_state) {
+    ren = Renderable::get(cur_state->tokens[1]);
+    return std::move(buildPATs(*ren));
+  } else {
+    return std::make_unique<vector<PAT>>();
+  }
+}
+
 Matrix<double, 4, 4> getprmtfmmat(const Primitive& prm) {
   auto coeff = prm.getCoeff();
   Transformation t{SCALE, coeff[0], coeff[1], coeff[2], 1};
@@ -161,25 +172,8 @@ Matrix<double, 4, 4> getprmtfmmat(const Primitive& prm) {
 }
 
 void Assignment::drawIOTest() {
-  const Line* cur_state = CommandLine::getState();
-  Renderable* ren = nullptr;
-  if (cur_state) {
-    ren = Renderable::get(cur_state->tokens[1]);
-  } else {
-    for (int i = -10; i <= 10; ++i) {
-      for (int j = -10; j <= 10; ++j) {
-        for (int k = -10; k <= 10; ++k) {
-          draw_blue_sphere(static_cast<double>(i)/2.0,
-                           static_cast<double>(j)/2.0,
-                           static_cast<double>(k)/2.0);
-        }
-      }
-    }
-    return;
-  }
-
   // Build vector of PATs by traversing tree
-  auto pats = buildPATs(*ren);
+  auto pats = getpats();
 
   for (int i = -10; i <= 10; ++i) {
     for (int j = -10; j <= 10; ++j) {
@@ -215,5 +209,21 @@ void Assignment::drawIOTest() {
 }
 
 void Assignment::drawIntersectTest(Camera *camera) {
+  /*
+    for each sq in the scene:
+      test if it hits the sq
+      track the intersection closest to the camera
+      
+    draw line from closest intersection in direction of normal
+  */
+  const Line* cur_state = CommandLine::getState();
+  Renderable* ren = nullptr;
+  if (cur_state) {
+    ren = Renderable::get(cur_state->tokens[1]);
+  } else {
+    return;
+  }
 
+  // Build vector of PATs by traversing tree
+  auto pats = buildPATs(*ren);
 }
