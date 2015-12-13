@@ -119,12 +119,12 @@ void draw_red_sphere(double x, double y, double z) {
 }
 
 /** Build vector of PATs by traversing tree **/
-std::unique_ptr<vector<PAT>> buildPATs (const Renderable& root, int level=0) {
+std::unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {
   auto v = std::make_unique<vector<PAT>>();
   if (level > 20) {
     return std::move(v);
   }
-  switch(root.getType()) {
+  switch (root.getType()) {
   case PRM:
     {
     Matrix<double, 4, 4> m;
@@ -141,7 +141,8 @@ std::unique_ptr<vector<PAT>> buildPATs (const Renderable& root, int level=0) {
       auto child_tfm = tfmvec2mat(child.transformations);
       auto child_made_pat_vec = buildPATs(*Renderable::get(child.name), level + 1);
       for (auto& child_made_pat : *child_made_pat_vec) {
-        v->emplace_back(child_made_pat.prm, overall_tfm * child_tfm * child_made_pat.tfm);
+        v->emplace_back(child_made_pat.prm,
+                        overall_tfm * child_tfm * child_made_pat.tfm);
       }
     }
     }
@@ -153,13 +154,19 @@ std::unique_ptr<vector<PAT>> buildPATs (const Renderable& root, int level=0) {
   return std::move(v);
 }
 
+Matrix<double, 4, 4> getprmtfmmat(const Primitive& prm) {
+  auto coeff = prm.getCoeff();
+  Transformation t{SCALE, coeff[0], coeff[1], coeff[2], 1};
+  return tfm2mat(t);
+}
+
 void Assignment::drawIOTest() {
   const Line* cur_state = CommandLine::getState();
   Renderable* ren = nullptr;
   if (cur_state) {
     ren = Renderable::get(cur_state->tokens[1]);
   } else {
-    for(int i = -10; i <= 10; ++i) {
+    for (int i = -10; i <= 10; ++i) {
       for (int j = -10; j <= 10; ++j) {
         for (int k = -10; k <= 10; ++k) {
           draw_blue_sphere(static_cast<double>(i)/2.0,
@@ -174,7 +181,7 @@ void Assignment::drawIOTest() {
   // Build vector of PATs by traversing tree
   auto pats = buildPATs(*ren);
 
-  for(int i = -10; i <= 10; ++i) {
+  for (int i = -10; i <= 10; ++i) {
     for (int j = -10; j <= 10; ++j) {
       for (int k = -10; k <= 10; ++k) {
         // Do stuff for each (i,j,k)
@@ -186,11 +193,11 @@ void Assignment::drawIOTest() {
           // get x,y,z by transforming i,j,k
           Matrix<double, 4, 1> pretfm;
           pretfm << di /2.0, dj / 2.0, dk/2.0, 1;
-          auto posttfm = pat.tfm.inverse() * pretfm;
+          auto posttfm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * pretfm;
           auto w = posttfm(3);
-          auto x = double(posttfm(0)) / w;
-          auto y = double(posttfm(1)) / w;
-          auto z = double(posttfm(2)) / w;
+          auto x = posttfm(0) / w;
+          auto y = posttfm(1) / w;
+          auto z = posttfm(2) / w;
 
           if (sq_io(x, y, z, pat.prm.getExp0(), pat.prm.getExp1()) <= 0) {
             inside = true;
@@ -205,7 +212,6 @@ void Assignment::drawIOTest() {
       }
     }
   }
-
 }
 
 void Assignment::drawIntersectTest(Camera *camera) {
