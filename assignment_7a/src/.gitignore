@@ -1,0 +1,14 @@
+Assignment.o
+Renderer.o
+Scene.o
+Shader.o
+UI.o
+Utilities.o
+command_line.o
+commands.o
+compile_out
+data/objwithobjs
+data/ra
+data/sphere
+model.o
+modeler
