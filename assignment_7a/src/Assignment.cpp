@@ -426,7 +426,8 @@ void Assignment::drawIntersectTest(Camera *camera) {
                                   at,
                                   bt,
                                   tm);
-
+      std::cout << "tmc: " << tmc.t;
+      std::cout << "tpc: " << tpc.t;
       if (tpc.hit && tmc.hit && tpc.t > 0 && tmc.t > 0) {
         // use lowest tc
         auto tf = min(tpc.t, tmc.t);
@@ -434,7 +435,7 @@ void Assignment::drawIntersectTest(Camera *camera) {
           lowest_t = tf;
           closest_pat = &pat;
         }
-      } else if (tpc.hit && tpc.t > 0) {
+      }/* else if (tpc.hit && tmc.hit && tpc.t > 0 && tpc.t > 0) {
         if (tpc.t < lowest_t) {
           lowest_t = tpc.t;
           closest_pat = &pat;
@@ -446,6 +447,7 @@ void Assignment::drawIntersectTest(Camera *camera) {
           closest_pat = &pat;
         }
       }
+       */
     }
   }
   if (closest_pat != nullptr) {
