@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <limits>
 #include <iostream>
+#include <string>
 
 /** Take a Transform and create a transformation matrix **/
 Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
@@ -285,6 +286,10 @@ MissOrHit findIntersection(double e, double n,
   for (int iteration = 0; iteration < 10000; ++iteration) {
     auto gpt = gp(t_old);
     auto gt = g(t_old);
+    // DEBUG
+    //std::cout << "Iteration" << iteration << " gt(" << t_old << ") = " << gt << "\n";
+    //std::cout << "Iteration" << iteration << " gpt(" << t_old << ") = " << gpt << "\n";
+    // ENDEBUG
 
     if (abs(gt) < 0.00001) {
       return MissOrHit(true, t_old);
@@ -301,7 +306,10 @@ MissOrHit findIntersection(double e, double n,
 }
 
 // DEBUG
-void printMatrix(MatrixXd m) {
+void printMatrix(MatrixXd m, std::string msg="") {
+  if (!msg.empty()) {
+    std::cout << msg;
+  }
   for (int r = 0; r < m.rows(); r++) {
     std::cout << "row " << r << ": ";
     for (int c = 0; c < m.cols(); c++) {
@@ -336,7 +344,7 @@ void Assignment::drawIntersectTest(Camera *camera) {
                            ROTATE, axis(0), axis(1), axis(2), angle));
   Matrix<double, 4, 1> a_mat;
   a_mat = rot_mat * a0_mat;
-  a_v = Vector3f(a_mat(0), a_mat(1), a_mat(2));
+  a_v = Vector3f(a_mat(0)/a_mat(3), a_mat(1)/a_mat(3), a_mat(2)/a_mat(3));
 
   // DEBUG:
   std::cout << "JG: Camera pos:" << b_v(0) << " " << b_v(1) << " "<< b_v(2) << "\n";
@@ -357,14 +365,19 @@ void Assignment::drawIntersectTest(Camera *camera) {
     Matrix<double, 4, 1> bm;
     bm << b_v(0), b_v(1), b_v(2), 1;
 
-    auto atm = pat.tfm.inverse() * am;
-    Vector3d at(atm(0), atm(1), atm(2));
+    auto atm = pat.twot.transpose() * am;
+    Vector3d at(atm(0)/atm(3), atm(1)/atm(3), atm(2)/atm(3));
     auto btm = pat.tfm.inverse() * bm;
-    Vector3d bt(btm(0), btm(1), btm(2));
+    Vector3d bt(btm(0)/btm(3), btm(1)/btm(3), btm(2)/btm(3));
 
-    auto a = a_v.dot(a_v);
-    auto b = 2*(a_v.dot(b_v));
-    auto c = b_v.dot(b_v) - 3.0;
+    // DEBUG
+    printMatrix(bm, "bm:\n");
+    printMatrix(am, "am:\n");
+    printMatrix(pat.twot.transpose(), "pat.twot.transpose():\n");
+    // ENDEBUG
+    auto a = at.dot(at);
+    auto b = 2*(at.dot(bt));
+    auto c = bt.dot(bt) - 3.0;
 
     auto discriminant = b*b - 4*a*c;
     if (discriminant < 0) {
@@ -374,6 +387,11 @@ void Assignment::drawIntersectTest(Camera *camera) {
     auto tp = tplus(a, b, c);
     auto tm = tminus(a, b, c);
 
+    // DEBUG
+    std::cout << "tp: " << tp << "\n";
+    std::cout << "tm: " << tm << "\n";
+    // ENDEBUG
+
     if (tp < 0 && tm < 0) {
       continue;
     } else if (tp > 0 && tm > 0) {
@@ -382,6 +400,13 @@ void Assignment::drawIntersectTest(Camera *camera) {
                                   at,
                                   bt,
                                   tm);
+      auto tpc = findIntersection(pat.prm.getExp0(),
+                                  pat.prm.getExp1(),
+                                  at,
+                                  bt,
+                                  tp);
+      std::cout << "tmc: " << tmc.t;
+      std::cout << "tpc: " << tpc.t;
       //assert(tmc.hit == true);
       if (tmc.hit == true and tmc.t < lowest_t) {
         lowest_t = tmc.t;
@@ -430,25 +455,22 @@ void Assignment::drawIntersectTest(Camera *camera) {
     Matrix<double, 4, 1> bm;
     bm << b_v(0), b_v(1), b_v(2), 1;
 
-    auto atm = closest_pat->tfm.inverse() * am;
-    Vector3f at(atm(0), atm(1), atm(2));
+    auto atm = closest_pat->twot.transpose() * am;
+    Vector3f at(atm(0)/atm(3), atm(1)/atm(3), atm(2)/atm(3));
     auto btm = closest_pat->tfm.inverse() * bm;
-    Vector3f bt(btm(0), btm(1), btm(2));
+    Vector3f bt(btm(0)/btm(3), btm(1)/btm(3), btm(2)/btm(3));
 
-    std::cout << "JG: atm:\n";
-    printMatrix(atm);
-
-    std::cout << "JG: btm:\n";
-    printMatrix(btm);
+    // DEBUG
+    //printMatrix(atm, "JG: atm:\n");
+    //printMatrix(btm, "JG: btm:\n");
+    // ENDEBUG
 
     auto v = at * lowest_t + bt;
     Matrix<double, 4, 1> v_m;
     v_m << v(0), v(1), v(2), 1;
     // DEBUG
-    std::cout << "JG: v_m : Intersection before tfm back to world space:\n";
-    printMatrix(v_m);
-    std::cout << "JG: pat.tfm: \n";
-    printMatrix(closest_pat->tfm);
+    //printMatrix(v_m, "JG: v_m : Intersection before tfm back to world space:\n");
+    //printMatrix(closest_pat->tfm, "JG: pat.tfm: \n");
     // ENDEBUG
     auto nt = closest_pat->prm.getNormal(v);
     Matrix<double, 4, 1> nt4;
@@ -461,8 +483,9 @@ void Assignment::drawIntersectTest(Camera *camera) {
 
     // TODO: get intersection point:
     auto i4 = closest_pat->tfm * v_m;
-    std::cout << "JG: i4:\n";
-    printMatrix(i4);
+    // DEBUG
+    printMatrix(i4, "JG: i4:\n");
+    // ENDEBUG
 
     auto w = i4(3);
     Vector3d intersection_point(i4(0)/w, i4(1)/w, i4(2)/w);
