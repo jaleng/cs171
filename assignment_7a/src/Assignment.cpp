@@ -300,6 +300,17 @@ MissOrHit findIntersection(double e, double n,
   assert(false);  // Did not converge or return miss
 }
 
+// DEBUG
+void printMatrix(MatrixXd m) {
+  for (int r = 0; r < m.rows(); r++) {
+    std::cout << "row " << r << ": ";
+    for (int c = 0; c < m.cols(); c++) {
+      std::cout << m(r, c) <<  "\t";
+    }
+    std::cout << "\n";
+  }
+}
+
 void Assignment::drawIntersectTest(Camera *camera) {
   // DEBUG:
   std::cout << "JG: Enter drawIntersectTest\n";
@@ -346,9 +357,9 @@ void Assignment::drawIntersectTest(Camera *camera) {
     Matrix<double, 4, 1> bm;
     bm << b_v(0), b_v(1), b_v(2), 1;
 
-    auto atm = pat.tfm * am;
+    auto atm = pat.tfm.inverse() * am;
     Vector3d at(atm(0), atm(1), atm(2));
-    auto btm = pat.tfm * bm;
+    auto btm = pat.tfm.inverse() * bm;
     Vector3d bt(btm(0), btm(1), btm(2));
 
     auto a = a_v.dot(a_v);
@@ -414,26 +425,60 @@ void Assignment::drawIntersectTest(Camera *camera) {
   }
   if (closest_pat != nullptr) {
     // Get the normal, apply inverse transform (normal form), then draw line
-    auto v = a_v * lowest_t + b_v;
+    Matrix<double, 4, 1> am;
+    am << a_v(0), a_v(1), a_v(2), 1;
+    Matrix<double, 4, 1> bm;
+    bm << b_v(0), b_v(1), b_v(2), 1;
+
+    auto atm = closest_pat->tfm.inverse() * am;
+    Vector3f at(atm(0), atm(1), atm(2));
+    auto btm = closest_pat->tfm.inverse() * bm;
+    Vector3f bt(btm(0), btm(1), btm(2));
+
+    std::cout << "JG: atm:\n";
+    printMatrix(atm);
+
+    std::cout << "JG: btm:\n";
+    printMatrix(btm);
+
+    auto v = at * lowest_t + bt;
     Matrix<double, 4, 1> v_m;
     v_m << v(0), v(1), v(2), 1;
-    Matrix<double, 4, 1> vt_m = closest_pat->tfm.inverse() * v_m;
-    double w = vt_m(3);
-    Vector3d vt(vt_m(0)/w, vt_m(1)/w, vt_m(2)/w);
+    // DEBUG
+    std::cout << "JG: v_m : Intersection before tfm back to world space:\n";
+    printMatrix(v_m);
+    std::cout << "JG: pat.tfm: \n";
+    printMatrix(closest_pat->tfm);
+    // ENDEBUG
     auto nt = closest_pat->prm.getNormal(v);
     Matrix<double, 4, 1> nt4;
     nt4 << nt(0), nt(1), nt(2), 1;
     // Transform normal back into world space
     auto n4 = (closest_pat->twot).transpose() * nt4;
-    Vector3f n3(n4(0), n4(1), n4(2));
+    Vector3d n3(n4(0), n4(1), n4(2));
+    n3 /= n3.norm();
 
 
     // TODO: get intersection point:
-    auto intersection_point = a_v * lowest_t + b_v;
+    auto i4 = closest_pat->tfm * v_m;
+    std::cout << "JG: i4:\n";
+    printMatrix(i4);
+
+    auto w = i4(3);
+    Vector3d intersection_point(i4(0)/w, i4(1)/w, i4(2)/w);
+    //auto intersection_point = Matrix()closest_pat->tfm*v_m;//a_v * lowest_t + b_v;
     auto end_line = intersection_point + n3;
 
     // DEBUG:
     std::cout << "JG: Drawing a line\n";
+    std::cout << "JG: From "
+              <<intersection_point(0) << " "
+              <<intersection_point(1)  << " "
+              <<intersection_point(2) <<"\n";
+    std::cout << "JG: To   "
+              <<end_line(0) << " "
+              <<end_line(1)  << " "
+              <<end_line(2) <<"\n";
     // ENDEBUG:
     // TODO: Draw line from intersection point in direction of normal
     // DEBUG
