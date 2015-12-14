@@ -283,7 +283,7 @@ MissOrHit findIntersection(double e, double n,
   };
 
   auto gp_was_negative = gp(t_old) < 0;
-  for (int iteration = 0; iteration < 10000; ++iteration) {
+  for (int iteration = 0; iteration < 100000; ++iteration) {
     auto gpt = gp(t_old);
     auto gt = g(t_old);
     // DEBUG
@@ -365,15 +365,15 @@ void Assignment::drawIntersectTest(Camera *camera) {
     Matrix<double, 4, 1> bm;
     bm << b_v(0), b_v(1), b_v(2), 1;
 
-    auto atm = pat.twot.transpose() * am;
+    auto atm = (pat.twot * getprmtfmmat(pat.prm)).transpose() * am;
     Vector3d at(atm(0)/atm(3), atm(1)/atm(3), atm(2)/atm(3));
-    auto btm = pat.tfm.inverse() * bm;
+    auto btm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bm;
     Vector3d bt(btm(0)/btm(3), btm(1)/btm(3), btm(2)/btm(3));
 
     // DEBUG
-    printMatrix(bm, "bm:\n");
-    printMatrix(am, "am:\n");
-    printMatrix(pat.twot.transpose(), "pat.twot.transpose():\n");
+    //printMatrix(bm, "bm:\n");
+    //printMatrix(am, "am:\n");
+    //printMatrix(pat.twot.transpose(), "pat.twot.transpose():\n");
     // ENDEBUG
     auto a = at.dot(at);
     auto b = 2*(at.dot(bt));
@@ -457,11 +457,12 @@ void Assignment::drawIntersectTest(Camera *camera) {
     Matrix<double, 4, 1> bm;
     bm << b_v(0), b_v(1), b_v(2), 1;
 
-    auto atm = closest_pat->twot.transpose() * am;
-    Vector3f at(atm(0)/atm(3), atm(1)/atm(3), atm(2)/atm(3));
-    auto btm = closest_pat->tfm.inverse() * bm;
-    Vector3f bt(btm(0)/btm(3), btm(1)/btm(3), btm(2)/btm(3));
+    auto pat = *closest_pat;
 
+    auto atm = (pat.twot * getprmtfmmat(pat.prm)).transpose() * am;
+    Vector3d at(atm(0)/atm(3), atm(1)/atm(3), atm(2)/atm(3));
+    auto btm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bm;
+    Vector3d bt(btm(0)/btm(3), btm(1)/btm(3), btm(2)/btm(3));
     // DEBUG
     //printMatrix(atm, "JG: atm:\n");
     //printMatrix(btm, "JG: btm:\n");
@@ -474,18 +475,22 @@ void Assignment::drawIntersectTest(Camera *camera) {
     //printMatrix(v_m, "JG: v_m : Intersection before tfm back to world space:\n");
     //printMatrix(closest_pat->tfm, "JG: pat.tfm: \n");
     // ENDEBUG
-    auto nt = closest_pat->prm.getNormal(v);
+    auto tmp = getprmtfmmat(pat.prm) * v_m;
+    Vector3f scaled(tmp(0)/tmp(3), tmp(1)/tmp(3), tmp(2)/tmp(3));
+    auto nt = closest_pat->prm.getNormal(scaled);
     Matrix<double, 4, 1> nt4;
     nt4 << nt(0), nt(1), nt(2), 1;
     // Transform normal back into world space
-    auto n4 = (closest_pat->twot).transpose() * nt4;
+    auto n4 = (closest_pat->twot * getprmtfmmat(pat.prm)).inverse().transpose() * nt4;
     Vector3d n3(n4(0), n4(1), n4(2));
     n3 /= n3.norm();
 
 
     // TODO: get intersection point:
-    auto i4 = closest_pat->tfm * v_m;
+    auto i4 = closest_pat->tfm * getprmtfmmat(pat.prm) * v_m;
     // DEBUG
+    printMatrix(v_m, "JG: v_m:\n");
+    printMatrix(closest_pat->tfm * getprmtfmmat(pat.prm), "JG: i4 = this * v_m:\n");
     printMatrix(i4, "JG: i4:\n");
     // ENDEBUG
 
