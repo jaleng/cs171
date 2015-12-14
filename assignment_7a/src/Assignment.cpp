@@ -10,6 +10,7 @@
 #include <memory>
 #include <algorithm>
 #include <limits>
+#include <iostream>
 
 /** Take a Transform and create a transformation matrix **/
 Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
@@ -300,6 +301,9 @@ MissOrHit findIntersection(double e, double n,
 }
 
 void Assignment::drawIntersectTest(Camera *camera) {
+  // DEBUG:
+  std::cout << "JG: Enter drawIntersectTest\n";
+  // ENDEBUG:
   /*
     for each sq in the scene:
       test if it hits the sq
@@ -311,17 +315,22 @@ void Assignment::drawIntersectTest(Camera *camera) {
   // Vector3f
   auto b_v = camera->getPosition();
   auto a_v = camera->getAxis();
-  /*
   Matrix<double, 4, 1> a0_mat;
   a0_mat << 0, 0, -1, 1;
 
-  // Apply camera rotation to a0 to get a
+  // Apply camera rotation to a0 to get a_v
+  auto axis = camera->getAxis();
+  auto angle = camera->getAngle();
   auto rot_mat = tfm2mat(Transformation(
-                           ROTATE, axis[0], axis[1], axis[2], angle));
+                           ROTATE, axis(0), axis(1), axis(2), angle));
   Matrix<double, 4, 1> a_mat;
   a_mat = rot_mat * a0_mat;
-  auto a = Vector3d(a_mat(0), a_mat(1), a_mat(2));
-  */
+  a_v = Vector3f(a_mat(0), a_mat(1), a_mat(2));
+
+  // DEBUG:
+  std::cout << "JG: Camera pos:" << b_v(0) << " " << b_v(1) << " "<< b_v(2) << "\n";
+  std::cout << "JG: Camera axs:" << a_v(0) << " " << a_v(1) << " "<< a_v(2) << "\n";
+  // ENDEBUG:
 
   double lowest_t = std::numeric_limits<double>::infinity();
   PAT* closest_pat = nullptr;
@@ -362,8 +371,11 @@ void Assignment::drawIntersectTest(Camera *camera) {
                                   at,
                                   bt,
                                   tm);
-      assert(tmc.hit == true);
-      lowest_t = min(lowest_t, tmc.t);
+      //assert(tmc.hit == true);
+      if (tmc.hit == true and tmc.t < lowest_t) {
+        lowest_t = tmc.t;
+        closest_pat = &pat;
+      }
     } else {
       // Find intersection using tp
       auto tpc = findIntersection(pat.prm.getExp0(),
@@ -409,9 +421,33 @@ void Assignment::drawIntersectTest(Camera *camera) {
     double w = vt_m(3);
     Vector3d vt(vt_m(0)/w, vt_m(1)/w, vt_m(2)/w);
     auto nt = closest_pat->prm.getNormal(v);
-    //auto n = ?normalinverse(nt);
+    Matrix<double, 4, 1> nt4;
+    nt4 << nt(0), nt(1), nt(2), 1;
+    // Transform normal back into world space
+    auto n4 = (closest_pat->twot).transpose() * nt4;
+    Vector3f n3(n4(0), n4(1), n4(2));
 
+
+    // TODO: get intersection point:
+    auto intersection_point = a_v * lowest_t + b_v;
+    auto end_line = intersection_point + n3;
+
+    // DEBUG:
+    std::cout << "JG: Drawing a line\n";
+    // ENDEBUG:
     // TODO: Draw line from intersection point in direction of normal
-    
+    // DEBUG
+    // Draw red sphere at intersection,
+    draw_red_sphere(intersection_point(0), intersection_point(1), intersection_point(2));
+    // blue sphere at end of normal line
+    draw_blue_sphere(end_line(0), end_line(1), end_line(2));
+    // ENDEBUG
+    const float purple[3] {1.0, 0.0, 1.0};
+    glMaterialfv(GL_FRONT, GL_AMBIENT, purple);
+    glBegin(GL_LINES);
+    glVertex3f(intersection_point(0), intersection_point(1),
+               intersection_point(2));
+    glVertex3f(end_line(0), end_line(1), end_line(2));
+    glEnd();
   }
 }
