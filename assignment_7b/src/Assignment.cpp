@@ -334,11 +334,20 @@ MissOrHit findIntersection(double e, double n,
   assert(false);  // Did not converge or return miss
 }
 
+// Forward declaration
+PAT* get_closest_PAT_thru_ray(vector<PAT>& pats, Vector3d A, Vector3d B, double *t_save);
 
 bool isShaded(const PointLight& light, Vector3d lit_pos, const Primitive& prm, vector<PAT> pats) {
-  // TODO: implement
-  
-  return false;
+  Vector3d light_position(light.position[0]/light.position[3],
+                          light.position[1]/light.position[3],
+                          light.position[2]/light.position[3]);
+  Vector3d dir = lit_pos - light_position;
+  dir.normalize();
+  auto closest_pat = get_closest_PAT_thru_ray(pats, dir, light_position, nullptr);
+  if (closest_pat != nullptr && &closest_pat->prm == &prm) {
+    return false;
+  }
+  return true;
 }
 
 Vector3d lighting(Vector3d lit_pos, Vector3d normal,
@@ -518,8 +527,8 @@ void Assignment::raytrace(Camera camera, Scene scene) {
         auto intersection_wc =
           transform(v, closest_pat->tfm * getprmtfmmat(pat.prm));
 
-        printMatrix(intersection_wc, "JG: intersection_wc:\n");
-        printMatrix(normal_wc, "JG: normal_wc:\n");
+        //printMatrix(intersection_wc, "JG: intersection_wc:\n");
+        //printMatrix(normal_wc, "JG: normal_wc:\n");
 
         auto color = lighting(intersection_wc,
                               normal_wc,
@@ -528,7 +537,7 @@ void Assignment::raytrace(Camera camera, Scene scene) {
                               scene.lights,
                               B);
         png.setPixel(i, j, color(0), color(1), color(2));
-        printMatrix(color, "JG: color: \n");
+        //printMatrix(color, "JG: color: \n");
 
         // DEBUG
         //// Draw line from intersection point along the surface normal
