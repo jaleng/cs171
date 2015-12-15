@@ -206,6 +206,99 @@ Vector3d getA(const Camera& camera, int i, int j) {
   return  (look * camera.getNear()) + (right * x_i(i)) + (up * y_j(j));
 }
 
+Matrix<double, 4, 4> getprmtfmmat(const Primitive& prm) {
+  auto coeff = prm.getCoeff();
+  Transformation t{SCALE, coeff[0], coeff[1], coeff[2], 1};
+  return tfm2mat(t);
+}
+
+/** Finds initial guess t- for intersection finding algorithm
+ *  Assumes discriminant > 0
+ **/
+double tminus(double a, double b, double c) {
+  auto disc = b*b - 4*a*c;
+  return (-b - sqrt(disc)) / (2*a);
+}
+
+
+/** Finds initial guess t+ for intersection finding algorithm
+ *  Assumes discriminant > 0
+ **/
+double tplus(double a, double b, double c) {
+  auto disc = b*b-4*a*c;
+  return (2*c) / (-b - sqrt(disc));
+}
+
+/** Get gradient of superquadric inside-out function at a given point
+ *  May not be normalized.
+ *  Possible numerical errors for small e, n.
+ **/
+Vector3d grad_sq_io(double x, double y, double z, double e, double n) {
+  Vector3d res;
+  auto term = pow(pow(x*x, 1/e) + pow(y*y, 1/e),
+                  e/n - 1);
+  res(0) = (2*x*pow(x*x, 1/e-1)*term) / n;
+  res(1) = (2*y*pow(y*y, 1/e-1)*term) / n;
+  res(2) = 2*z*pow(z*z, 1/n-1) / n;
+  return res;
+}
+
+/** Maybe double. If hit is true, t is valid; otherwise not. **/
+struct MissOrHit {
+  bool hit;
+  double t;
+  MissOrHit(bool _hit, double _t) : hit{_hit}, t{_t} {}
+  explicit MissOrHit(bool _hit) : hit{false}, t{0} {
+    assert(_hit == false);
+  }
+  explicit MissOrHit(double _t) : hit{true}, t{_t} {}
+};
+
+MissOrHit findIntersection(double e, double n,
+                           Vector3d a, Vector3d b, double t_old) {
+  // function to get ray from t
+  auto ray = [a, b](double t) {
+    return a*t + b;
+  };
+  // function to get sq_io from ray r
+  auto sq_io_r = [a, b, e, n](Vector3d r) {
+    return sq_io(r(0), r(1), r(2), e, n);
+  };
+  // function to get grad_sq_io from ray r
+  auto grad_sq_io_r = [e, n](Vector3d r) {
+    return grad_sq_io(r(0), r(1), r(2), e, n);
+  };
+
+  auto g = [a, b, e, n, sq_io_r, ray](double t) {
+    return sq_io_r(ray(t));
+  };
+  // derivative of g
+  auto gp = [a, b, e, n, grad_sq_io_r, ray](double t) {
+    return a.dot(grad_sq_io_r(ray(t)));
+  };
+
+  auto gp_was_negative = gp(t_old) < 0;
+  constexpr int max_iterations = 1000;
+  for (int iteration = 0; iteration < max_iterations; ++iteration) {
+    auto gpt = gp(t_old);
+    auto gt = g(t_old);
+
+    if (abs(gt) < 0.00001) {
+      return MissOrHit(t_old);
+    } else if (abs(gpt) < 0.00001) {
+      return MissOrHit(false);
+    } else if (gp_was_negative && gpt > 0) {
+      // gp sign changed from negative to positive
+      return MissOrHit(false);
+    }
+    gp_was_negative = gpt < 0;
+    t_old = t_old - (gt / gpt);
+  }
+  std::cout << "findIntersect did not converge; exp values may be too small.\n";
+  assert(false);  // Did not converge or return miss
+}
+
+
 bool isShaded(const PointLight& light, Vector3d lit_pos, const Primitive& prm) {
   // TODO: implement
   return false;
@@ -263,17 +356,121 @@ Vector3d lighting(Vector3d lit_pos, Vector3d normal,
 
 /* Ray traces the scene. */
 void Assignment::raytrace(Camera camera, Scene scene) {
-    // LEAVE THIS UNLESS YOU WANT TO WRITE YOUR OWN OUTPUT FUNCTION
-    PNGMaker png = PNGMaker(XRES, YRES);
+  // LEAVE THIS UNLESS YOU WANT TO WRITE YOUR OWN OUTPUT FUNCTION
+  PNGMaker png = PNGMaker(XRES, YRES);
 
-    // REPLACE THIS WITH YOUR CODE
-    for (int i = 0; i < XRES; i++) {
-        for (int j = 0; j < YRES; j++) {
-            png.setPixel(i, j, 1.0, 1.0, 1.0);
+  // REPLACE THIS WITH YOUR CODE
+  // Get pats
+  auto pats = getPATs(scene);
+  auto B = getB(camera);
+
+  for (int i = 0; i < XRES; i++) {
+    for (int j = 0; j < YRES; j++) {
+      auto A = getA(camera, i, j);
+
+      // Iterating throught the pats, we will find the closest intersection
+      double lowest_t = std::numeric_limits<double>::infinity();
+      PAT* closest_pat = nullptr;
+
+      for (auto& pat : *pats) {
+        auto B_transformed = transform(B, (pat.tfm
+                                           * getprmtfmmat(pat.prm)).inverse());
+        auto BplusA_transformed =
+          transform(B+A, (pat.tfm * getprmtfmmat(pat.prm)).inverse());
+        auto A_transformed = BplusA_transformed - B_transformed;
+
+        // Prepare for intersect finding
+
+        auto a = A_transformed.dot(A_transformed);
+        auto b = 2*(A_transformed.dot(B_transformed));
+        auto c = B_transformed.dot(B_transformed) - 3.0;
+
+        auto discriminant = b*b - 4*a*c;
+        if (discriminant < 0) {
+          // No intersection
+          continue;
         }
-    }
 
-    // LEAVE THIS UNLESS YOU WANT TO WRITE YOUR OWN OUTPUT FUNCTION
-    if (png.saveImage())
-        printf("Error: couldn't save PNG image\n");
+        auto tp = tplus(a, b, c);
+        auto tm = tminus(a, b, c);
+
+        if (tp < 0 && tm < 0) {
+          // sq is behind camera, no intersection
+          continue;
+        } else if (tp > 0 && tm > 0) {
+          // sq bounding box is in front of camera
+          auto tmc = findIntersection(pat.prm.getExp0(),
+                                      pat.prm.getExp1(),
+                                      A_transformed,
+                                      B_transformed,
+                                      tm);
+          if (tmc.hit == true && tmc.t < lowest_t) {
+            // Found a new closest intersection
+            lowest_t = tmc.t;
+            closest_pat = &pat;
+          }
+        } else {
+          // Find intersection using tp
+          auto tpc = findIntersection(pat.prm.getExp0(),
+                                      pat.prm.getExp1(),
+                                      A_transformed,
+                                      B_transformed,
+                                      tp);
+
+          // Find intersection using tm
+          auto tmc = findIntersection(pat.prm.getExp0(),
+                                      pat.prm.getExp1(),
+                                      A_transformed,
+                                      B_transformed,
+                                      tm);
+
+          if (tpc.hit && tmc.hit && tpc.t > 0 && tmc.t > 0) {
+            // use lowest tc
+            auto tf = min(tpc.t, tmc.t);
+            if (tf < lowest_t) {
+              // Found a new closest intersection
+              lowest_t = tf;
+              closest_pat = &pat;
+            }
+          }
+        }
+      }
+      if (closest_pat != nullptr) {
+        auto pat = *closest_pat;
+        // Get the normal, apply inverse transform (normal form), then draw line
+        auto B_transformed = transform(B, (pat.tfm
+                                           * getprmtfmmat(pat.prm)).inverse());
+        auto BplusA_transformed =
+          transform(B+A, (pat.tfm * getprmtfmmat(pat.prm)).inverse());
+        auto A_transformed = BplusA_transformed - B_transformed;
+
+        Vector3d v = A_transformed * lowest_t + B_transformed;
+
+        auto scaled = transform(v, getprmtfmmat(pat.prm));
+        auto normal_transformed = closest_pat->prm.getNormal(scaled.cast<float>()).cast<double>();
+        auto normal_wc =
+          transformNormal(normal_transformed,
+                          closest_pat->twot * getprmtfmmat(pat.prm));
+        normal_wc /= normal_wc.norm();
+        // Get intersection point:
+        auto intersection_wc =
+          transform(v, closest_pat->tfm * getprmtfmmat(pat.prm));
+
+        auto color = lighting(intersection_wc,
+                              normal_wc,
+                              pat.prm,
+                              scene.lights,
+                              B);
+        png.setPixel(i, j, color(0), color(1), color(2));
+      } else {
+        png.setPixel(i, j, 0, 0, 0);
+      }
+      // EXAMPLE HOW TO USE PNG
+      // png.setPixel(i, j, 1.0, 1.0, 1.0);
+    }
+  }
+
+  // LEAVE THIS UNLESS YOU WANT TO WRITE YOUR OWN OUTPUT FUNCTION
+  if (png.saveImage())
+    printf("Error: couldn't save PNG image\n");
 }
