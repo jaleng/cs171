@@ -23,6 +23,7 @@ Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
 
   switch(tfm.type) {
   case TRANS:
+    //std::cout << "JG: Found Translation\n";
     assert(w == 1);
     mat << 1, 0, 0, x,
            0, 1, 0, y,
@@ -30,6 +31,7 @@ Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
            0, 0, 0, 1;
     break;
   case SCALE:
+    //std::cout << "JG: Found Scale\n";
     assert(w == 1);
     mat << x, 0, 0, 0,
            0, y, 0, 0,
@@ -37,6 +39,7 @@ Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
            0, 0, 0, 1;
     break;
   case ROTATE:    // Normalize
+    //std::cout << "JG: Found Rotation\n";
     auto length = sqrt(x * x + y * y + z * z);
     x /= length;
     y /= length;
@@ -66,17 +69,20 @@ Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
 
 /** Take a vector of transforms and create a transformation matrix **/
 Matrix<double, 4, 4> tfmvec2mat(const vector<Transformation>& tfmvec) {
+  //std::cout << "JG: Entering tfmvec2mat\n";
   Matrix<double, 4, 4> mat;
   mat.setIdentity();
   for (auto it = tfmvec.cbegin(); it != tfmvec.cend(); ++it) {
     auto tmp = mat;
     mat = tfm2mat(*it) * tmp;
   }
+  //std::cout << "JG: Exiting tfmvec2mat\n";
   return mat;
 }
 
 /** Take a vector of transforms and create a transformation matrix **/
 Matrix<double, 4, 4> tfmvec2mat_wo_tl(const vector<Transformation>& tfmvec) {
+  //std::cout << "JG: Entering tfmvec2mat_wo_tl\n";
   Matrix<double, 4, 4> mat;
   mat.setIdentity();
   for (auto it = tfmvec.cbegin(); it != tfmvec.cend(); ++it) {
@@ -85,6 +91,7 @@ Matrix<double, 4, 4> tfmvec2mat_wo_tl(const vector<Transformation>& tfmvec) {
       mat = tfm2mat(*it) * tmp;
     }
   }
+  //std::cout << "JG: Exiting tfmvec2mat_wo_tl\n";
   return mat;
 }
 
@@ -361,18 +368,31 @@ void Assignment::drawIntersectTest(Camera *camera) {
 
     // Transform a_v and b_v using the primitive's transform
     Matrix<double, 4, 1> am;
-    am << a_v(0), a_v(1), a_v(2), 1;
+    am << a_v(0), a_v(1), a_v(2), 0;
     Matrix<double, 4, 1> bm;
     bm << b_v(0), b_v(1), b_v(2), 1;
 
-    auto atm = (pat.twot * getprmtfmmat(pat.prm)).transpose() * am;
-    Vector3d at(atm(0)/atm(3), atm(1)/atm(3), atm(2)/atm(3));
+    auto bplusam = am + bm;
+    auto bplusatm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bplusam;
+    Vector3d bplusat(bplusatm(0)/bplusatm(3), bplusatm(1)/bplusatm(3), bplusatm(2)/bplusatm(3));
     auto btm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bm;
     Vector3d bt(btm(0)/btm(3), btm(1)/btm(3), btm(2)/btm(3));
+    Vector3d at = bplusat - bt;
 
     // DEBUG
-    //printMatrix(bm, "bm:\n");
-    //printMatrix(am, "am:\n");
+    draw_red_sphere(bt(0), bt(1), bt(2));
+    draw_blue_sphere(bt(0) + at(0), bt(1) + at(1), bt(2) + at(2));
+    const float white[3] {1.0, 1.0, 1.0};
+    glMaterialfv(GL_FRONT, GL_AMBIENT, white);
+    glBegin(GL_LINES);
+    glVertex3f(bt(0), bt(1), bt(2));
+    glVertex3f(bt(0) + at(0) * 10, bt(1) + at(1) * 10, bt(2) + at(2) * 10);
+    glEnd();
+    // ENDEBUG
+
+    // DEBUG
+    //printMatrix(bt, "bt:\n");
+    //printMatrix(at, "at:\n");
     //printMatrix(pat.twot.transpose(), "pat.twot.transpose():\n");
     // ENDEBUG
     auto a = at.dot(at);
@@ -388,8 +408,8 @@ void Assignment::drawIntersectTest(Camera *camera) {
     auto tm = tminus(a, b, c);
 
     // DEBUG
-    std::cout << "tp: " << tp << "\n";
-    std::cout << "tm: " << tm << "\n";
+    //std::cout << "tp: " << tp << "\n";
+    //std::cout << "tm: " << tm << "\n";
     // ENDEBUG
 
     if (tp < 0 && tm < 0) {
@@ -400,13 +420,13 @@ void Assignment::drawIntersectTest(Camera *camera) {
                                   at,
                                   bt,
                                   tm);
-      auto tpc = findIntersection(pat.prm.getExp0(),
-                                  pat.prm.getExp1(),
-                                  at,
-                                  bt,
-                                  tp);
-      std::cout << "tmc: " << tmc.t;
-      std::cout << "tpc: " << tpc.t;
+      // auto tpc = findIntersection(pat.prm.getExp0(),
+      //                             pat.prm.getExp1(),
+      //                             at,
+      //                             bt,
+      //                             tp);
+      //std::cout << "tmc: " << tmc.t;
+      //std::cout << "tpc: " << tpc.t;
       //assert(tmc.hit == true);
       if (tmc.hit == true and tmc.t < lowest_t) {
         lowest_t = tmc.t;
@@ -426,8 +446,8 @@ void Assignment::drawIntersectTest(Camera *camera) {
                                   at,
                                   bt,
                                   tm);
-      std::cout << "tmc: " << tmc.t;
-      std::cout << "tpc: " << tpc.t;
+      //std::cout << "tmc: " << tmc.t;
+      //std::cout << "tpc: " << tpc.t;
       if (tpc.hit && tmc.hit && tpc.t > 0 && tmc.t > 0) {
         // use lowest tc
         auto tf = min(tpc.t, tmc.t);
@@ -453,16 +473,18 @@ void Assignment::drawIntersectTest(Camera *camera) {
   if (closest_pat != nullptr) {
     // Get the normal, apply inverse transform (normal form), then draw line
     Matrix<double, 4, 1> am;
-    am << a_v(0), a_v(1), a_v(2), 1;
+    am << a_v(0), a_v(1), a_v(2), 0;
     Matrix<double, 4, 1> bm;
     bm << b_v(0), b_v(1), b_v(2), 1;
 
     auto pat = *closest_pat;
 
-    auto atm = (pat.twot * getprmtfmmat(pat.prm)).transpose() * am;
-    Vector3d at(atm(0)/atm(3), atm(1)/atm(3), atm(2)/atm(3));
+    auto bplusam = am + bm;
+    auto bplusatm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bplusam;
+    Vector3d bplusat(bplusatm(0)/bplusatm(3), bplusatm(1)/bplusatm(3), bplusatm(2)/bplusatm(3));
     auto btm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bm;
     Vector3d bt(btm(0)/btm(3), btm(1)/btm(3), btm(2)/btm(3));
+    Vector3d at = bplusat - bt;
     // DEBUG
     //printMatrix(atm, "JG: atm:\n");
     //printMatrix(btm, "JG: btm:\n");
@@ -489,9 +511,9 @@ void Assignment::drawIntersectTest(Camera *camera) {
     // TODO: get intersection point:
     auto i4 = closest_pat->tfm * getprmtfmmat(pat.prm) * v_m;
     // DEBUG
-    printMatrix(v_m, "JG: v_m:\n");
-    printMatrix(closest_pat->tfm * getprmtfmmat(pat.prm), "JG: i4 = this * v_m:\n");
-    printMatrix(i4, "JG: i4:\n");
+    //printMatrix(v_m, "JG: v_m:\n");
+    //printMatrix(closest_pat->tfm * getprmtfmmat(pat.prm), "JG: i4 = this * v_m:\n");
+    //printMatrix(i4, "JG: i4:\n");
     // ENDEBUG
 
     auto w = i4(3);
