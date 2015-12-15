@@ -380,6 +380,7 @@ void Assignment::drawIntersectTest(Camera *camera) {
     Vector3d at = bplusat - bt;
 
     // DEBUG
+    /*
     draw_red_sphere(bt(0), bt(1), bt(2));
     draw_blue_sphere(bt(0) + at(0), bt(1) + at(1), bt(2) + at(2));
     const float white[3] {1.0, 1.0, 1.0};
@@ -388,6 +389,7 @@ void Assignment::drawIntersectTest(Camera *camera) {
     glVertex3f(bt(0), bt(1), bt(2));
     glVertex3f(bt(0) + at(0) * 10, bt(1) + at(1) * 10, bt(2) + at(2) * 10);
     glEnd();
+    */
     // ENDEBUG
 
     // DEBUG
