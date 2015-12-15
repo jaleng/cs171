@@ -290,12 +290,12 @@ MissOrHit findIntersection(double e, double n,
   };
 
   auto gp_was_negative = gp(t_old) < 0;
-  for (int iteration = 0; iteration < 100000; ++iteration) {
+  for (int iteration = 0; iteration < 1000; ++iteration) {
     auto gpt = gp(t_old);
     auto gt = g(t_old);
     // DEBUG
-    //std::cout << "Iteration" << iteration << " gt(" << t_old << ") = " << gt << "\n";
-    //std::cout << "Iteration" << iteration << " gpt(" << t_old << ") = " << gpt << "\n";
+    std::cout << "Iteration" << iteration << " gt(" << t_old << ") = " << gt << "\n";
+    std::cout << "Iteration" << iteration << " gpt(" << t_old << ") = " << gpt << "\n";
     // ENDEBUG
 
     if (abs(gt) < 0.00001) {
@@ -309,6 +309,7 @@ MissOrHit findIntersection(double e, double n,
     gp_was_negative = gpt < 0;
     t_old = t_old - (gt / gpt);
   }
+  std::cout << "findIntersect did not converge; exp values may be too small.\n";
   assert(false);  // Did not converge or return miss
 }
 
