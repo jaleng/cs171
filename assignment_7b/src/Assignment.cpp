@@ -166,11 +166,45 @@ unique_ptr<vector<PAT>> getPATs(const Scene& scene) {
   return std::move(pats);
 }
 
+Vector3d transform(Vector3d v, Matrix<double, 4, 4> tfm) {
+  Vector4d v4;
+  v4 << v(0), v(1), v(2), 1;
+  auto tmp = tfm * v4;
+  return Vector3d(tmp(0)/tmp(3), tmp(1)/tmp(3), tmp(2)/tmp(3));
+}
+
+Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {
+  Vector4d v4;
+  v4 << v(0), v(1), v(2), 0;
+  auto tmp = tfm.inverse().transpose() * v4;
+  return Vector3d(tmp(0), tmp(1), tmp(2));
+}
+
 Vector3d getB(const Camera& camera) {
   return camera.getPosition().cast<double>();
 }
 
-Vector3d getA(const Camera& camera, int i, int j);
+Vector3d getA(const Camera& camera, int i, int j) {
+  // Get width and height of screen plane
+  auto height = 2 * camera.getNear()
+                  * tan(static_cast<double>(camera.getFov()) / 2.0);
+  auto width = static_cast<double>(camera.getAspect()) * height;
+
+  //// Get camera basis vectors
+  // Get camera rotation
+  auto axis = camera.getAxis();
+  auto angle = camera.getAngle();
+  auto rot_mat = tfm2mat(Transformation(
+                           ROTATE, axis(0), axis(1), axis(2), angle));
+  auto look  = transform(Vector3d(0, 0, -1), rot_mat);
+  auto right = transform(Vector3d(1, 0, 0), rot_mat);
+  auto up    = transform(Vector3d(0, 1, 0), rot_mat);
+
+  auto x_i = [width](int i) {return (i - XRES/2.0) * width / XRES;};
+  auto y_j = [height](int j) {return (j - YRES/2.0) * height / YRES;};
+
+  return  (look * camera.getNear()) + (right * x_i(i)) + (up * y_j(j));
+}
 
 Vector3d lighting(Vector3d lit_pos, Vector3d normal,
          const Primitive& prm, const vector<PointLight>& lights,
