@@ -1,0 +1,5 @@
+prm sphere
+obj object
+ap sphere
+prm sphere
+setCoeff 2 2 2

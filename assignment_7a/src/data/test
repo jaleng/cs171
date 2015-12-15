@@ -1,0 +1,10 @@
+prm cube
+exp 0.02 0.02
+obj object
+ap cube
+ss .5 1 2
+rs 0 1 0 30
+rs 0 0 1 180
+xs -.6 0 -.4
+xs 0 0 .7
+xs 0 0 1

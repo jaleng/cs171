@@ -1,0 +1,6 @@
+prm cube
+exp 0.02 0.02
+obj object
+ap cube
+ss .5 1 2
+rs 0 1 0 1

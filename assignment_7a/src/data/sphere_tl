@@ -1,0 +1,18 @@
+prm test_prm
+setExponent 1 .0001
+exp 1 1
+exp .5 .5
+exp .3 .3
+exp .1 .1
+exp .001 .001
+exp .00001 .00001
+obj test_obj
+ap test_prm
+ss 2 2 2
+prm test_prm
+exp 1 1
+obj test_obj
+sall .5 .5 .5
+sall 5 5 5
+sall .2 .2 .2
+xall 0 0 -2
