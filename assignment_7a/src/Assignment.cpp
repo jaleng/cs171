@@ -21,9 +21,8 @@ Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
   auto z = tfm.trans[2];
   auto w = tfm.trans[3];
 
-  switch(tfm.type) {
+  switch (tfm.type) {
   case TRANS:
-    //std::cout << "JG: Found Translation\n";
     assert(w == 1);
     mat << 1, 0, 0, x,
            0, 1, 0, y,
@@ -31,15 +30,14 @@ Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
            0, 0, 0, 1;
     break;
   case SCALE:
-    //std::cout << "JG: Found Scale\n";
     assert(w == 1);
     mat << x, 0, 0, 0,
            0, y, 0, 0,
            0, 0, z, 0,
            0, 0, 0, 1;
     break;
-  case ROTATE:    // Normalize
-    //std::cout << "JG: Found Rotation\n";
+  case ROTATE:
+    // Normalize
     auto length = sqrt(x * x + y * y + z * z);
     x /= length;
     y /= length;
@@ -61,7 +59,6 @@ Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
       x_y * omct + z * st, y2 + (1 - y2) * ct, y_z * omct - x * st, 0,
       x_z * omct - y * st, y_z * omct + x * st, z2 + (1 - z2) * ct, 0,
       0, 0, 0, 1;
-
     break;
   }
   return mat;
@@ -69,20 +66,19 @@ Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
 
 /** Take a vector of transforms and create a transformation matrix **/
 Matrix<double, 4, 4> tfmvec2mat(const vector<Transformation>& tfmvec) {
-  //std::cout << "JG: Entering tfmvec2mat\n";
   Matrix<double, 4, 4> mat;
   mat.setIdentity();
   for (auto it = tfmvec.cbegin(); it != tfmvec.cend(); ++it) {
     auto tmp = mat;
     mat = tfm2mat(*it) * tmp;
   }
-  //std::cout << "JG: Exiting tfmvec2mat\n";
   return mat;
 }
 
-/** Take a vector of transforms and create a transformation matrix **/
+/** Take a vector of transforms and create a transformation matrix
+ *   that does not factor in translations 
+ **/
 Matrix<double, 4, 4> tfmvec2mat_wo_tl(const vector<Transformation>& tfmvec) {
-  //std::cout << "JG: Entering tfmvec2mat_wo_tl\n";
   Matrix<double, 4, 4> mat;
   mat.setIdentity();
   for (auto it = tfmvec.cbegin(); it != tfmvec.cend(); ++it) {
@@ -91,7 +87,6 @@ Matrix<double, 4, 4> tfmvec2mat_wo_tl(const vector<Transformation>& tfmvec) {
       mat = tfm2mat(*it) * tmp;
     }
   }
-  //std::cout << "JG: Exiting tfmvec2mat_wo_tl\n";
   return mat;
 }
 
@@ -106,6 +101,9 @@ double sq_io(double x, double y, double z, double e, double n) {
          - 1.0;
 }
 
+/** PAT, structure to hold a primitive and associated transforms.
+ *  This type will be referenced as 'pat' in code and comments 
+ **/
 struct PAT {
   Primitive prm;
   Matrix<double, 4, 4> tfm;
@@ -115,13 +113,12 @@ struct PAT {
     : prm{_prm}, tfm{_tfm}, twot{_twot}{}
 };
 
-// draw blue dot at (x,y,z)
-void draw_blue_sphere(double x, double y, double z) {
-  const float blue_light[3] = {0.0, 0.0, 1.0};
-
-  glMaterialfv(GL_FRONT, GL_AMBIENT, blue_light);
+/** Draw a sphere at (x,y,z) of a given color with small jitter **/
+void draw_sphere(double x, double y, double z, const float color[3]) {
+  glMaterialfv(GL_FRONT, GL_AMBIENT, color);
   glPushMatrix();
-  auto jitter = .03;
+  constexpr float jitter = .03;
+  // Let deltas be in range [-jitter/2, jitter/2]
   auto dx = (jitter / 2) - jitter * (rand() / RAND_MAX);
   auto dy = (jitter / 2) - jitter * (rand() / RAND_MAX);
   auto dz = (jitter / 2) - jitter * (rand() / RAND_MAX);
@@ -130,24 +127,24 @@ void draw_blue_sphere(double x, double y, double z) {
   glPopMatrix();
 }
 
-// draw red dot at (x,y,z)
+/** Draw blue dot at (x,y,z), with small jitter **/
+void draw_blue_sphere(double x, double y, double z) {
+  constexpr float blue_light[3] = {0.0, 0.0, 1.0};
+  draw_sphere(x, y, z, blue_light);
+}
+
+/** Draw red dot at (x,y,z), with small jitter **/
 void draw_red_sphere(double x, double y, double z) {
   const float red_light[3] = {1.0, 0.0, 0.0};
-  glMaterialfv(GL_FRONT, GL_AMBIENT, red_light);
-  glPushMatrix();
-  auto jitter = .03;
-  auto dx = (jitter / 2) - jitter * (rand() / RAND_MAX);
-  auto dy = (jitter / 2) - jitter * (rand() / RAND_MAX);
-  auto dz = (jitter / 2) - jitter * (rand() / RAND_MAX);
-  glTranslated(x + dx, y + dy, z + dz);
-  glutSolidSphere(0.03, 5, 5);
-  glPopMatrix();
+  draw_sphere(x, y, z, red_light);
 }
 
 /** Build vector of PATs by traversing tree **/
 std::unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {
   auto v = std::make_unique<vector<PAT>>();
-  if (level > 20) {
+  constexpr int max_depth = 20;
+  if (level > max_depth) {
+    // Exceeded max depth, do not add any more primitives/objects
     return std::move(v);
   }
   switch (root.getType()) {
@@ -177,6 +174,7 @@ std::unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {
     }
     break;
   case MSH:
+    // I don't know what this is
     assert(false);
     break;
   }
