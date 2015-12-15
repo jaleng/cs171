@@ -14,14 +14,162 @@
 #define YRES 250
 
 using std::unique_ptr;
+/** Take a Transform and create a transformation matrix **/
+Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
+  Matrix<double, 4, 4> mat;
+  auto x = tfm.trans[0];
+  auto y = tfm.trans[1];
+  auto z = tfm.trans[2];
+  auto w = tfm.trans[3];
 
-unique_ptr<vector<PAT>> getPATs(const Renderable& ren);
-unique_ptr<vector<PAT>> getPATs(const Scene& scene);
+  switch (tfm.type) {
+  case TRANS:
+    assert(w == 1);
+    mat << 1, 0, 0, x,
+           0, 1, 0, y,
+           0, 0, 1, z,
+           0, 0, 0, 1;
+    break;
+  case SCALE:
+    assert(w == 1);
+    mat << x, 0, 0, 0,
+           0, y, 0, 0,
+           0, 0, z, 0,
+           0, 0, 0, 1;
+    break;
+  case ROTATE:
+    // Normalize
+    auto length = sqrt(x * x + y * y + z * z);
+    x /= length;
+    y /= length;
+    z /= length;
+
+    auto theta = w;
+    auto ct = cos(theta);
+    auto st = sin(theta);
+    auto x2 = x * x;
+    auto y2 = y * y;
+    auto z2 = z * z;
+    auto x_y = x * y;
+    auto x_z = x * z;
+    auto y_z = y * z;
+    auto omct = 1 - ct;  // 1 - cos(theta);
+
+    mat <<
+      x2  + (1 - x2) * ct, x_y * omct - z * st, x_z * omct + y * st, 0,
+      x_y * omct + z * st, y2 + (1 - y2) * ct, y_z * omct - x * st, 0,
+      x_z * omct - y * st, y_z * omct + x * st, z2 + (1 - z2) * ct, 0,
+      0, 0, 0, 1;
+    break;
+  }
+  return mat;
+}
+
+/** Take a vector of transforms and create a transformation matrix **/
+Matrix<double, 4, 4> tfmvec2mat(const vector<Transformation>& tfmvec) {
+  Matrix<double, 4, 4> mat;
+  mat.setIdentity();
+  for (auto it = tfmvec.cbegin(); it != tfmvec.cend(); ++it) {
+    auto tmp = mat;
+    mat = tfm2mat(*it) * tmp;
+  }
+  return mat;
+}
+
+/** Take a vector of transforms and create a transformation matrix
+ *   that does not factor in translations 
+ **/
+Matrix<double, 4, 4> tfmvec2mat_wo_tl(const vector<Transformation>& tfmvec) {
+  Matrix<double, 4, 4> mat;
+  mat.setIdentity();
+  for (auto it = tfmvec.cbegin(); it != tfmvec.cend(); ++it) {
+    auto tmp = mat;
+    if (it->type != TRANS) {
+      mat = tfm2mat(*it) * tmp;
+    }
+  }
+  return mat;
+}
+
+/** Superquadric inside-outside test
+ *  < 0 -> inside object
+ *  = 0 -> on object's surface
+ *  > 0 -> outside the object
+ */
+double sq_io(double x, double y, double z, double e, double n) {
+  return   pow(pow(x*x, 1.0/e) + pow(y*y, 1.0/e), e/n)
+         + pow(z*z, 1.0/n)
+         - 1.0;
+}
+
+/** PAT, structure to hold a primitive and associated transforms.
+ *  This type will be referenced as 'pat' in code and comments 
+ **/
+struct PAT {
+  Primitive prm;
+  Matrix<double, 4, 4> tfm;
+  Matrix<double, 4, 4> twot;
+  PAT(const Primitive& _prm, const Matrix<double, 4, 4> _tfm,
+      const Matrix<double, 4, 4> _twot)
+    : prm{_prm}, tfm{_tfm}, twot{_twot}{}
+};
+/** Build vector of PATs by traversing tree **/
+unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {
+  auto v = std::make_unique<vector<PAT>>();
+  constexpr int max_depth = 20;
+  if (level > max_depth) {
+    // Exceeded max depth, do not add any more primitives/objects
+    return std::move(v);
+  }
+  switch (root.getType()) {
+  case PRM:
+    {
+    Matrix<double, 4, 4> m;
+    m.setIdentity();
+    v->emplace_back(dynamic_cast<const Primitive&>(root), m, m);
+    break;
+    }
+  case OBJ:
+    {
+    auto obj = dynamic_cast<const Object&>(root);
+    auto overall_tfm = tfmvec2mat(obj.getOverallTransformation());
+    auto overall_twot = tfmvec2mat_wo_tl(obj.getOverallTransformation());
+    for (const auto& item : obj.getChildren()) {
+      auto child = item.second;
+      auto child_tfm = tfmvec2mat(child.transformations);
+      auto child_twot = tfmvec2mat_wo_tl(child.transformations);
+      auto child_made_pat_vec = buildPATs(*Renderable::get(child.name), level + 1);
+      for (auto& child_made_pat : *child_made_pat_vec) {
+        v->emplace_back(child_made_pat.prm,
+                        overall_tfm * child_tfm * child_made_pat.tfm,
+                        overall_twot * child_twot * child_made_pat.twot);
+      }
+    }
+    }
+    break;
+  case MSH:
+    // I don't know what this is
+    assert(false);
+    break;
+  }
+  return std::move(v);
+}
+
+unique_ptr<vector<PAT>> getPATs(const Scene& scene) {
+  auto pats = std::make_unique<vector<PAT>>();
+  for (const auto& obj_p : scene.root_objs) {
+    for (const auto& pat :
+           *buildPATs(dynamic_cast<const Renderable&>(*obj_p))) {
+      pats->push_back(pat);
+    }
+  }
+  return std::move(pats);
+}
 
 Vector3d getB(const Camera& camera);
 Vector3d getA(const Camera& camera, int i, int j);
 
-lighting(Vector3d lit_pos, Vector3d normal,
+Vector3d lighting(Vector3d lit_pos, Vector3d normal,
          const Primitive& prm, const vector<PointLight>& lights,
          Vector3d cam_pos);
 bool isShaded(const PointLight& light, Vector3d lit_pos, const Primitive& prm);
