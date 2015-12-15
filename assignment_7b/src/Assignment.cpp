@@ -166,13 +166,11 @@ unique_ptr<vector<PAT>> getPATs(const Scene& scene) {
   return std::move(pats);
 }
 
-Vector3d getB(Camera& camera) {
+Vector3d getB(const Camera& camera) {
   return camera.getPosition().cast<double>();
 }
 
-Vector3d getA(const Camera& camera, int i, int j) {
-  //auto height = 2 * camera.getNear()
-}
+Vector3d getA(const Camera& camera, int i, int j);
 
 Vector3d lighting(Vector3d lit_pos, Vector3d normal,
          const Primitive& prm, const vector<PointLight>& lights,

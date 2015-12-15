@@ -31,13 +31,13 @@ struct Camera {
         float fov, float aspect);
 
     // Accessors
-    Vector3f getPosition();
-    Vector3f getAxis();
-    float getAngle();
-    float getNear();
-    float getFar();
-    float getFov();
-    float getAspect();
+    Vector3f getPosition() const;
+    Vector3f getAxis() const;
+    float getAngle() const;
+    float getNear() const;
+    float getFar() const;
+    float getFov() const;
+    float getAspect() const;
 };
 
 // Screen resolution and camera object
