@@ -1,3 +1,10 @@
+#include <vector>
+#include <memory>
+#include <algorithm>
+#include <limits>
+#include <iostream>
+#include <string>
+
 #include "Assignment.hpp"
 
 #include "Utilities.hpp"
@@ -5,13 +12,6 @@
 #include "Scene.hpp"
 #include "UI.hpp"
 #include "model.hpp"
-
-#include <vector>
-#include <memory>
-#include <algorithm>
-#include <limits>
-#include <iostream>
-#include <string>
 
 /** Take a Transform and create a transformation matrix **/
 Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {
@@ -202,16 +202,17 @@ void Assignment::drawIOTest() {
   // Build vector of PATs by traversing tree
   auto pats = getpats();
 
+  // (i/2, j/2, k/2) is the point in world space we are testing
+  // inside the for loops
   for (int i = -10; i <= 10; ++i) {
     for (int j = -10; j <= 10; ++j) {
       for (int k = -10; k <= 10; ++k) {
-        // Do stuff for each (i,j,k)
         auto di = static_cast<double>(i);
         auto dj = static_cast<double>(j);
         auto dk = static_cast<double>(k);
         auto inside =  false;
         for (const auto& pat : *pats) {
-          // get x,y,z by transforming i,j,k
+          // get x,y,z by transforming i/2,j/2,k/2
           Matrix<double, 4, 1> pretfm;
           pretfm << di /2.0, dj / 2.0, dk/2.0, 1;
           auto posttfm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * pretfm;
@@ -235,46 +236,59 @@ void Assignment::drawIOTest() {
   }
 }
 
-// Assumes discriminant > 0
+/** Finds initial guess t- for intersection finding algorithm
+ *  Assumes discriminant > 0
+ **/
 double tminus(double a, double b, double c) {
   auto disc = b*b - 4*a*c;
   return (-b - sqrt(disc)) / (2*a);
 }
 
 
-// Assumes discriminant > 0
+/** Finds initial guess t+ for intersection finding algorithm
+ *  Assumes discriminant > 0
+ **/
 double tplus(double a, double b, double c) {
   auto disc = b*b-4*a*c;
   return (2*c) / (-b - sqrt(disc));
 }
 
-// may not be normalized
+/** Get gradient of superquadric inside-out function at a given point
+ *  May not be normalized.
+ *  Possible numerical errors for small e, n.
+ **/
 Vector3d grad_sq_io(double x, double y, double z, double e, double n) {
   Vector3d res;
-  auto blah = pow(pow(x*x, 1/e) + pow(y*y, 1/e),
+  auto term = pow(pow(x*x, 1/e) + pow(y*y, 1/e),
                   e/n - 1);
-  res(0) = (2*x*pow(x*x, 1/e-1)*blah) / n;
-  res(1) = (2*y*pow(y*y, 1/e-1)*blah) / n;
+  res(0) = (2*x*pow(x*x, 1/e-1)*term) / n;
+  res(1) = (2*y*pow(y*y, 1/e-1)*term) / n;
   res(2) = 2*z*pow(z*z, 1/n-1) / n;
   return res;
 }
 
+/** Maybe double. If hit is true, t is valid; otherwise not. **/
 struct MissOrHit {
   bool hit;
   double t;
-  MissOrHit(bool _hit, double _t) : hit{_hit}, t{_t}{}
+  MissOrHit(bool _hit, double _t) : hit{_hit}, t{_t} {}
+  explicit MissOrHit(bool _hit) : hit{false}, t{0} {
+    assert(_hit == false);
+  }
+  explicit MissOrHit(double _t) : hit{true}, t{_t} {}
 };
 
 MissOrHit findIntersection(double e, double n,
                            Vector3d a, Vector3d b, double t_old) {
+  // function to get ray from t
   auto ray = [a, b](double t) {
     return a*t + b;
   };
-
+  // function to get sq_io from ray r
   auto sq_io_r = [a, b, e, n](Vector3d r) {
     return sq_io(r(0), r(1), r(2), e, n);
   };
-
+  // function to get grad_sq_io from ray r
   auto grad_sq_io_r = [e, n](Vector3d r) {
     return grad_sq_io(r(0), r(1), r(2), e, n);
   };
@@ -282,27 +296,24 @@ MissOrHit findIntersection(double e, double n,
   auto g = [a, b, e, n, sq_io_r, ray](double t) {
     return sq_io_r(ray(t));
   };
-
+  // derivative of g
   auto gp = [a, b, e, n, grad_sq_io_r, ray](double t) {
     return a.dot(grad_sq_io_r(ray(t)));
   };
 
   auto gp_was_negative = gp(t_old) < 0;
-  for (int iteration = 0; iteration < 1000; ++iteration) {
+  constexpr int max_iterations = 1000;
+  for (int iteration = 0; iteration < max_iterations; ++iteration) {
     auto gpt = gp(t_old);
     auto gt = g(t_old);
-    // DEBUG
-    std::cout << "Iteration" << iteration << " gt(" << t_old << ") = " << gt << "\n";
-    std::cout << "Iteration" << iteration << " gpt(" << t_old << ") = " << gpt << "\n";
-    // ENDEBUG
 
     if (abs(gt) < 0.00001) {
-      return MissOrHit(true, t_old);
-    } else if (abs(gpt) < 0.00001){
-      return MissOrHit(false, 0);
+      return MissOrHit(t_old);
+    } else if (abs(gpt) < 0.00001) {
+      return MissOrHit(false);
     } else if (gp_was_negative && gpt > 0) {
       // gp sign changed from negative to positive
-      return MissOrHit(false, 0);
+      return MissOrHit(false);
     }
     gp_was_negative = gpt < 0;
     t_old = t_old - (gt / gpt);
@@ -311,8 +322,8 @@ MissOrHit findIntersection(double e, double n,
   assert(false);  // Did not converge or return miss
 }
 
-// DEBUG
-void printMatrix(MatrixXd m, std::string msg="") {
+/** For DEBUG, prints out a matrix row-by-row **/
+void printMatrix(MatrixXd m, std::string msg = "") {
   if (!msg.empty()) {
     std::cout << msg;
   }
@@ -326,23 +337,12 @@ void printMatrix(MatrixXd m, std::string msg="") {
 }
 
 void Assignment::drawIntersectTest(Camera *camera) {
-  // DEBUG:
-  std::cout << "JG: Enter drawIntersectTest\n";
-  // ENDEBUG:
-  /*
-    for each sq in the scene:
-      test if it hits the sq
-      track the intersection closest to the camera
-      
-    draw line from closest intersection in direction of normal
-  */
-  // Get b (camera position)
-  // Vector3f
+  // Camera position, world space
   auto b_v = camera->getPosition();
-  auto a_v = camera->getAxis();
+
+  // Get camera direction, world space
   Matrix<double, 4, 1> a0_mat;
   a0_mat << 0, 0, -1, 1;
-
   // Apply camera rotation to a0 to get a_v
   auto axis = camera->getAxis();
   auto angle = camera->getAngle();
@@ -350,21 +350,16 @@ void Assignment::drawIntersectTest(Camera *camera) {
                            ROTATE, axis(0), axis(1), axis(2), angle));
   Matrix<double, 4, 1> a_mat;
   a_mat = rot_mat * a0_mat;
-  a_v = Vector3f(a_mat(0)/a_mat(3), a_mat(1)/a_mat(3), a_mat(2)/a_mat(3));
+  // Camera direction, world space
+  auto a_v = Vector3f(a_mat(0)/a_mat(3), a_mat(1)/a_mat(3), a_mat(2)/a_mat(3));
 
-  // DEBUG:
-  std::cout << "JG: Camera pos:" << b_v(0) << " " << b_v(1) << " "<< b_v(2) << "\n";
-  std::cout << "JG: Camera axs:" << a_v(0) << " " << a_v(1) << " "<< a_v(2) << "\n";
-  // ENDEBUG:
-
+  // Iterating throught the pats, we will find the closest intersection
   double lowest_t = std::numeric_limits<double>::infinity();
   PAT* closest_pat = nullptr;
 
   // Build vector of PATs by traversing tree
   auto pats = getpats();
   for (auto& pat : *pats) {
-    //// TODO: test if primitive is hit by camera look ray
-
     // Transform a_v and b_v using the primitive's transform
     Matrix<double, 4, 1> am;
     am << a_v(0), a_v(1), a_v(2), 0;
@@ -373,63 +368,39 @@ void Assignment::drawIntersectTest(Camera *camera) {
 
     auto bplusam = am + bm;
     auto bplusatm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bplusam;
-    Vector3d bplusat(bplusatm(0)/bplusatm(3), bplusatm(1)/bplusatm(3), bplusatm(2)/bplusatm(3));
+    Vector3d bplusat(bplusatm(0)/bplusatm(3), bplusatm(1)/bplusatm(3),
+                     bplusatm(2)/bplusatm(3));
     auto btm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bm;
+    // b (ie camera position) transformed
     Vector3d bt(btm(0)/btm(3), btm(1)/btm(3), btm(2)/btm(3));
+    // a (ie camera direction) transformed
     Vector3d at = bplusat - bt;
 
-    // DEBUG
-    /*
-    draw_red_sphere(bt(0), bt(1), bt(2));
-    draw_blue_sphere(bt(0) + at(0), bt(1) + at(1), bt(2) + at(2));
-    const float white[3] {1.0, 1.0, 1.0};
-    glMaterialfv(GL_FRONT, GL_AMBIENT, white);
-    glBegin(GL_LINES);
-    glVertex3f(bt(0), bt(1), bt(2));
-    glVertex3f(bt(0) + at(0) * 10, bt(1) + at(1) * 10, bt(2) + at(2) * 10);
-    glEnd();
-    */
-    // ENDEBUG
-
-    // DEBUG
-    //printMatrix(bt, "bt:\n");
-    //printMatrix(at, "at:\n");
-    //printMatrix(pat.twot.transpose(), "pat.twot.transpose():\n");
-    // ENDEBUG
     auto a = at.dot(at);
     auto b = 2*(at.dot(bt));
     auto c = bt.dot(bt) - 3.0;
 
     auto discriminant = b*b - 4*a*c;
     if (discriminant < 0) {
+      // No intersection
       continue;
     }
 
     auto tp = tplus(a, b, c);
     auto tm = tminus(a, b, c);
 
-    // DEBUG
-    //std::cout << "tp: " << tp << "\n";
-    //std::cout << "tm: " << tm << "\n";
-    // ENDEBUG
-
     if (tp < 0 && tm < 0) {
+      // sq is behind camera, no intersection
       continue;
     } else if (tp > 0 && tm > 0) {
+      // sq bounding box is in front of camera
       auto tmc = findIntersection(pat.prm.getExp0(),
                                   pat.prm.getExp1(),
                                   at,
                                   bt,
                                   tm);
-      // auto tpc = findIntersection(pat.prm.getExp0(),
-      //                             pat.prm.getExp1(),
-      //                             at,
-      //                             bt,
-      //                             tp);
-      //std::cout << "tmc: " << tmc.t;
-      //std::cout << "tpc: " << tpc.t;
-      //assert(tmc.hit == true);
-      if (tmc.hit == true and tmc.t < lowest_t) {
+      if (tmc.hit == true && tmc.t < lowest_t) {
+        // Found a new closest intersection
         lowest_t = tmc.t;
         closest_pat = &pat;
       }
@@ -447,30 +418,19 @@ void Assignment::drawIntersectTest(Camera *camera) {
                                   at,
                                   bt,
                                   tm);
-      //std::cout << "tmc: " << tmc.t;
-      //std::cout << "tpc: " << tpc.t;
+
       if (tpc.hit && tmc.hit && tpc.t > 0 && tmc.t > 0) {
         // use lowest tc
         auto tf = min(tpc.t, tmc.t);
         if (tf < lowest_t) {
+          // Found a new closest intersection
           lowest_t = tf;
           closest_pat = &pat;
         }
-      }/* else if (tpc.hit && tmc.hit && tpc.t > 0 && tpc.t > 0) {
-        if (tpc.t < lowest_t) {
-          lowest_t = tpc.t;
-          closest_pat = &pat;
-        }
-        continue;
-      } else if (tmc.hit && tmc.t > 0) {
-        if (tmc.t < lowest_t) {
-          lowest_t = tmc.t;
-          closest_pat = &pat;
-        }
       }
-       */
     }
   }
+  // Done finding closest intersection (if there is one)
   if (closest_pat != nullptr) {
     // Get the normal, apply inverse transform (normal form), then draw line
     Matrix<double, 4, 1> am;
@@ -482,22 +442,16 @@ void Assignment::drawIntersectTest(Camera *camera) {
 
     auto bplusam = am + bm;
     auto bplusatm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bplusam;
-    Vector3d bplusat(bplusatm(0)/bplusatm(3), bplusatm(1)/bplusatm(3), bplusatm(2)/bplusatm(3));
+    Vector3d bplusat(bplusatm(0)/bplusatm(3), bplusatm(1)/bplusatm(3),
+                     bplusatm(2)/bplusatm(3));
     auto btm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bm;
     Vector3d bt(btm(0)/btm(3), btm(1)/btm(3), btm(2)/btm(3));
     Vector3d at = bplusat - bt;
-    // DEBUG
-    //printMatrix(atm, "JG: atm:\n");
-    //printMatrix(btm, "JG: btm:\n");
-    // ENDEBUG
 
     auto v = at * lowest_t + bt;
     Matrix<double, 4, 1> v_m;
     v_m << v(0), v(1), v(2), 1;
-    // DEBUG
-    //printMatrix(v_m, "JG: v_m : Intersection before tfm back to world space:\n");
-    //printMatrix(closest_pat->tfm, "JG: pat.tfm: \n");
-    // ENDEBUG
+
     auto tmp = getprmtfmmat(pat.prm) * v_m;
     Vector3f scaled(tmp(0)/tmp(3), tmp(1)/tmp(3), tmp(2)/tmp(3));
     auto nt = closest_pat->prm.getNormal(scaled);
@@ -509,37 +463,19 @@ void Assignment::drawIntersectTest(Camera *camera) {
     n3 /= n3.norm();
 
 
-    // TODO: get intersection point:
+    // Get intersection point:
     auto i4 = closest_pat->tfm * getprmtfmmat(pat.prm) * v_m;
-    // DEBUG
-    //printMatrix(v_m, "JG: v_m:\n");
-    //printMatrix(closest_pat->tfm * getprmtfmmat(pat.prm), "JG: i4 = this * v_m:\n");
-    //printMatrix(i4, "JG: i4:\n");
-    // ENDEBUG
-
     auto w = i4(3);
     Vector3d intersection_point(i4(0)/w, i4(1)/w, i4(2)/w);
-    //auto intersection_point = Matrix()closest_pat->tfm*v_m;//a_v * lowest_t + b_v;
     auto end_line = intersection_point + n3;
 
-    // DEBUG:
-    std::cout << "JG: Drawing a line\n";
-    std::cout << "JG: From "
-              <<intersection_point(0) << " "
-              <<intersection_point(1)  << " "
-              <<intersection_point(2) <<"\n";
-    std::cout << "JG: To   "
-              <<end_line(0) << " "
-              <<end_line(1)  << " "
-              <<end_line(2) <<"\n";
-    // ENDEBUG:
-    // TODO: Draw line from intersection point in direction of normal
-    // DEBUG
-    // Draw red sphere at intersection,
-    draw_red_sphere(intersection_point(0), intersection_point(1), intersection_point(2));
-    // blue sphere at end of normal line
+    //// Draw line from intersection point along the surface normal
+    // Draw red sphere at intersection
+    draw_red_sphere(intersection_point(0), intersection_point(1),
+                    intersection_point(2));
+    // Draw blue sphere at end of normal line
     draw_blue_sphere(end_line(0), end_line(1), end_line(2));
-    // ENDEBUG
+    // Draw purple line from intersection point along normal
     const float purple[3] {1.0, 0.0, 1.0};
     glMaterialfv(GL_FRONT, GL_AMBIENT, purple);
     glBegin(GL_LINES);
