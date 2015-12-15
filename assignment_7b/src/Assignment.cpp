@@ -113,8 +113,38 @@ struct PAT {
       const Matrix<double, 4, 4> _twot)
     : prm{_prm}, tfm{_tfm}, twot{_twot}{}
 };
+
+
+/** Draw a sphere at (x,y,z) of a given color with small jitter **/
+void draw_sphere(double x, double y, double z, const float color[3]) {
+  glMaterialfv(GL_FRONT, GL_AMBIENT, color);
+  glPushMatrix();
+  constexpr float jitter = .03;
+  // Let deltas be in range [-jitter/2, jitter/2]
+  auto dx = (jitter / 2) - jitter * (rand() / RAND_MAX);
+  auto dy = (jitter / 2) - jitter * (rand() / RAND_MAX);
+  auto dz = (jitter / 2) - jitter * (rand() / RAND_MAX);
+  glTranslated(x + dx, y + dy, z + dz);
+  glutSolidSphere(0.03, 5, 5);
+  glPopMatrix();
+}
+
+/** Draw blue dot at (x,y,z), with small jitter **/
+void draw_blue_sphere(double x, double y, double z) {
+  constexpr float blue_light[3] = {0.0, 0.0, 1.0};
+  draw_sphere(x, y, z, blue_light);
+}
+
+/** Draw red dot at (x,y,z), with small jitter **/
+void draw_red_sphere(double x, double y, double z) {
+  const float red_light[3] = {1.0, 0.0, 0.0};
+  draw_sphere(x, y, z, red_light);
+}
+
+
 /** Build vector of PATs by traversing tree **/
 unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {
+  //cout << "JG: Enter buildPATs\n";
   auto v = std::make_unique<vector<PAT>>();
   constexpr int max_depth = 20;
   if (level > max_depth) {
@@ -152,15 +182,21 @@ unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {
     assert(false);
     break;
   }
+  //cout << "JG: Exit buildPATs\n";
   return std::move(v);
 }
 
 unique_ptr<vector<PAT>> getPATs(const Scene& scene) {
   auto pats = std::make_unique<vector<PAT>>();
   for (const auto& obj_p : scene.root_objs) {
-    for (const auto& pat :
-           *buildPATs(dynamic_cast<const Renderable&>(*obj_p))) {
-      pats->push_back(pat);
+    if (obj_p != nullptr) {
+      auto built = buildPATs(dynamic_cast<const Renderable&>(*obj_p));
+      if (built.get() == nullptr) {
+        cout << "JG: built is a nullptr\n";
+      }
+      for (const auto& pat : *built) {
+        pats->push_back(pat);
+      }
     }
   }
   return std::move(pats);
@@ -187,7 +223,7 @@ Vector3d getB(const Camera& camera) {
 Vector3d getA(const Camera& camera, int i, int j) {
   // Get width and height of screen plane
   auto height = 2 * camera.getNear()
-                  * tan(static_cast<double>(camera.getFov()) / 2.0);
+                  * tan(static_cast<double>(camera.getFov()) * M_PI / 180.0 / 2.0);
   auto width = static_cast<double>(camera.getAspect()) * height;
 
   //// Get camera basis vectors
@@ -299,13 +335,14 @@ MissOrHit findIntersection(double e, double n,
 }
 
 
-bool isShaded(const PointLight& light, Vector3d lit_pos, const Primitive& prm) {
+bool isShaded(const PointLight& light, Vector3d lit_pos, const Primitive& prm, vector<PAT> pats) {
   // TODO: implement
+  
   return false;
 }
 
 Vector3d lighting(Vector3d lit_pos, Vector3d normal,
-                  const Primitive& prm, const vector<PointLight>& lights,
+                  const Primitive& prm, vector<PAT> pats, const vector<PointLight>& lights,
                   Vector3d cam_pos)  {
   using std::max;
 
@@ -323,7 +360,7 @@ Vector3d lighting(Vector3d lit_pos, Vector3d normal,
 
   // Get the contribution from each light
   for (const auto& light : lights) {
-    if (isShaded(light, lit_pos, prm)) {
+    if (isShaded(light, lit_pos, prm, pats)) {
       continue;
     }
     Vector3d light_color(light.color[0], light.color[1], light.color[2]);
@@ -354,6 +391,94 @@ Vector3d lighting(Vector3d lit_pos, Vector3d normal,
                                    + specular_sum.cwiseProduct(specular));
 }
 
+/** For DEBUG, prints out a matrix row-by-row **/
+void printMatrix(MatrixXd m, std::string msg = "") {
+  if (!msg.empty()) {
+    std::cout << msg;
+  }
+  for (int r = 0; r < m.rows(); r++) {
+    std::cout << "row " << r << ": ";
+    for (int c = 0; c < m.cols(); c++) {
+      std::cout << m(r, c) <<  "\t";
+    }
+    std::cout << "\n";
+  }
+}
+
+PAT* get_closest_PAT_thru_ray(vector<PAT>& pats, Vector3d A, Vector3d B, double *t_save=nullptr) {
+  // Iterating throught the pats, we will find the closest intersection
+  double lowest_t = std::numeric_limits<double>::infinity();
+  PAT* closest_pat = nullptr;
+
+  for (auto& pat : pats) {
+    auto B_transformed = transform(B, (pat.tfm
+                                       * getprmtfmmat(pat.prm)).inverse());
+    auto BplusA_transformed =
+      transform(B+A, (pat.tfm * getprmtfmmat(pat.prm)).inverse());
+    auto A_transformed = BplusA_transformed - B_transformed;
+
+    // Prepare for intersect finding
+
+    auto a = A_transformed.dot(A_transformed);
+    auto b = 2*(A_transformed.dot(B_transformed));
+    auto c = B_transformed.dot(B_transformed) - 3.0;
+
+    auto discriminant = b*b - 4*a*c;
+    if (discriminant < 0) {
+      // No intersection
+      continue;
+    }
+
+    auto tp = tplus(a, b, c);
+    auto tm = tminus(a, b, c);
+
+    if (tp < 0 && tm < 0) {
+      // sq is behind camera, no intersection
+      continue;
+    } else if (tp > 0 && tm > 0) {
+      // sq bounding box is in front of camera
+      auto tmc = findIntersection(pat.prm.getExp0(),
+                                  pat.prm.getExp1(),
+                                  A_transformed,
+                                  B_transformed,
+                                  tm);
+      if (tmc.hit == true && tmc.t < lowest_t) {
+        // Found a new closest intersection
+        lowest_t = tmc.t;
+        closest_pat = &pat;
+      }
+    } else {
+      // Find intersection using tp
+      auto tpc = findIntersection(pat.prm.getExp0(),
+                                  pat.prm.getExp1(),
+                                  A_transformed,
+                                  B_transformed,
+                                  tp);
+
+      // Find intersection using tm
+      auto tmc = findIntersection(pat.prm.getExp0(),
+                                  pat.prm.getExp1(),
+                                  A_transformed,
+                                  B_transformed,
+                                  tm);
+
+      if (tpc.hit && tmc.hit && tpc.t > 0 && tmc.t > 0) {
+        // use lowest tc
+        auto tf = min(tpc.t, tmc.t);
+        if (tf < lowest_t) {
+          // Found a new closest intersection
+          lowest_t = tf;
+          closest_pat = &pat;
+        }
+      }
+    }
+  }
+  if (t_save != nullptr) {
+    *t_save = lowest_t;
+  }
+  return closest_pat;
+}
+
 /* Ray traces the scene. */
 void Assignment::raytrace(Camera camera, Scene scene) {
   // LEAVE THIS UNLESS YOU WANT TO WRITE YOUR OWN OUTPUT FUNCTION
@@ -361,80 +486,17 @@ void Assignment::raytrace(Camera camera, Scene scene) {
 
   // REPLACE THIS WITH YOUR CODE
   // Get pats
+  //cout << "JG: Before call to getPATs\n";
   auto pats = getPATs(scene);
+  //cout << "JG: After call to getPATs\n";
   auto B = getB(camera);
 
   for (int i = 0; i < XRES; i++) {
     for (int j = 0; j < YRES; j++) {
       auto A = getA(camera, i, j);
+      double lowest_t;
+      auto closest_pat = get_closest_PAT_thru_ray(*pats, A, B, &lowest_t);
 
-      // Iterating throught the pats, we will find the closest intersection
-      double lowest_t = std::numeric_limits<double>::infinity();
-      PAT* closest_pat = nullptr;
-
-      for (auto& pat : *pats) {
-        auto B_transformed = transform(B, (pat.tfm
-                                           * getprmtfmmat(pat.prm)).inverse());
-        auto BplusA_transformed =
-          transform(B+A, (pat.tfm * getprmtfmmat(pat.prm)).inverse());
-        auto A_transformed = BplusA_transformed - B_transformed;
-
-        // Prepare for intersect finding
-
-        auto a = A_transformed.dot(A_transformed);
-        auto b = 2*(A_transformed.dot(B_transformed));
-        auto c = B_transformed.dot(B_transformed) - 3.0;
-
-        auto discriminant = b*b - 4*a*c;
-        if (discriminant < 0) {
-          // No intersection
-          continue;
-        }
-
-        auto tp = tplus(a, b, c);
-        auto tm = tminus(a, b, c);
-
-        if (tp < 0 && tm < 0) {
-          // sq is behind camera, no intersection
-          continue;
-        } else if (tp > 0 && tm > 0) {
-          // sq bounding box is in front of camera
-          auto tmc = findIntersection(pat.prm.getExp0(),
-                                      pat.prm.getExp1(),
-                                      A_transformed,
-                                      B_transformed,
-                                      tm);
-          if (tmc.hit == true && tmc.t < lowest_t) {
-            // Found a new closest intersection
-            lowest_t = tmc.t;
-            closest_pat = &pat;
-          }
-        } else {
-          // Find intersection using tp
-          auto tpc = findIntersection(pat.prm.getExp0(),
-                                      pat.prm.getExp1(),
-                                      A_transformed,
-                                      B_transformed,
-                                      tp);
-
-          // Find intersection using tm
-          auto tmc = findIntersection(pat.prm.getExp0(),
-                                      pat.prm.getExp1(),
-                                      A_transformed,
-                                      B_transformed,
-                                      tm);
-
-          if (tpc.hit && tmc.hit && tpc.t > 0 && tmc.t > 0) {
-            // use lowest tc
-            auto tf = min(tpc.t, tmc.t);
-            if (tf < lowest_t) {
-              // Found a new closest intersection
-              lowest_t = tf;
-              closest_pat = &pat;
-            }
-          }
-        }
-      }
       if (closest_pat != nullptr) {
         auto pat = *closest_pat;
         // Get the normal, apply inverse transform (normal form), then draw line
@@ -456,12 +518,37 @@ void Assignment::raytrace(Camera camera, Scene scene) {
         auto intersection_wc =
           transform(v, closest_pat->tfm * getprmtfmmat(pat.prm));
 
+        printMatrix(intersection_wc, "JG: intersection_wc:\n");
+        printMatrix(normal_wc, "JG: normal_wc:\n");
+
         auto color = lighting(intersection_wc,
                               normal_wc,
                               pat.prm,
+                              *pats,
                               scene.lights,
                               B);
         png.setPixel(i, j, color(0), color(1), color(2));
+        printMatrix(color, "JG: color: \n");
+
+        // DEBUG
+        //// Draw line from intersection point along the surface normal
+        // Draw red sphere at intersection
+        auto end_line = intersection_wc + normal_wc;
+        draw_red_sphere(intersection_wc(0), intersection_wc(1),
+                        intersection_wc(2));
+        // Draw blue sphere at end of normal line
+        draw_blue_sphere(end_line(0), end_line(1), end_line(2));
+        // Draw purple line from intersection point along normal
+        const float purple[3] {1.0, 0.0, 1.0};
+        glMaterialfv(GL_FRONT, GL_AMBIENT, purple);
+        glBegin(GL_LINES);
+        glVertex3f(intersection_wc(0), intersection_wc(1),
+                   intersection_wc(2));
+        glVertex3f(end_line(0), end_line(1), end_line(2));
+        glEnd();
+
+
+        // ENDEBUG
       } else {
         png.setPixel(i, j, 0, 0, 0);
       }
@@ -473,4 +560,5 @@ void Assignment::raytrace(Camera camera, Scene scene) {
   // LEAVE THIS UNLESS YOU WANT TO WRITE YOUR OWN OUTPUT FUNCTION
   if (png.saveImage())
     printf("Error: couldn't save PNG image\n");
+  cout << "Finished raytracing()\n";
 }
