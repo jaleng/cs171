@@ -206,10 +206,60 @@ Vector3d getA(const Camera& camera, int i, int j) {
   return  (look * camera.getNear()) + (right * x_i(i)) + (up * y_j(j));
 }
 
+bool isShaded(const PointLight& light, Vector3d lit_pos, const Primitive& prm) {
+  // TODO: implement
+  return false;
+}
+
 Vector3d lighting(Vector3d lit_pos, Vector3d normal,
-         const Primitive& prm, const vector<PointLight>& lights,
-         Vector3d cam_pos);
-bool isShaded(const PointLight& light, Vector3d lit_pos, const Primitive& prm);
+                  const Primitive& prm, const vector<PointLight>& lights,
+                  Vector3d cam_pos)  {
+  using std::max;
+
+  auto rgb = prm.getColor();
+  Vector3d color(rgb.r, rgb.g, rgb.b);
+  auto diffuse = color * prm.getDiffuse();
+  auto ambient = color * prm.getAmbient();
+  auto specular = color * prm.getSpecular();
+  auto shininess = static_cast<double>(prm.getGloss());
+
+  Vector3d diffuse_sum(0, 0, 0);
+  Vector3d specular_sum(0, 0, 0);
+
+  auto cam_direction = (cam_pos - lit_pos).normalized();
+
+  // Get the contribution from each light
+  for (const auto& light : lights) {
+    if (isShaded(light, lit_pos, prm)) {
+      continue;
+    }
+    Vector3d light_color(light.color[0], light.color[1], light.color[2]);
+    // Attentuate the light_color
+    auto distance = static_cast<double>((lit_pos - cam_pos).norm());
+    light_color *= (1.0 / (1 + (light.k * distance * distance)));
+
+    Vector3d light_position(light.position[0]/light.position[3],
+                            light.position[1]/light.position[3],
+                            light.position[2]/light.position[3]);
+    auto light_direction = (light_position - lit_pos).normalized();
+
+    // Get diffuse light
+    double dot_product = normal.dot(light_direction);
+    auto light_diffuse = light_color * max(0.0, dot_product);
+    diffuse_sum += light_diffuse;
+
+    // Get specular light
+    dot_product = normal.dot((cam_direction + light_direction).normalized());
+    auto light_specular = light_color *
+                          pow(max(0.0, dot_product), shininess);
+    specular_sum += light_specular;
+  }
+
+  // Add ambient, diffuse, specular light; clip as necessary.
+  return Vector3d::Ones().cwiseMin(ambient
+                                   + diffuse_sum.cwiseProduct(diffuse)
+                                   + specular_sum.cwiseProduct(specular));
+}
 
 /* Ray traces the scene. */
 void Assignment::raytrace(Camera camera, Scene scene) {
