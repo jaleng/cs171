@@ -434,14 +434,11 @@ Vector3d getB(const Camera& camera) {
 
 void Assignment::drawIntersectTest(Camera *camera) {
   // Camera position, world space
-  // auto b_v = camera->getPosition();
 
   auto A = getA(*camera);
   auto B = getB(*camera);
 
   // Camera direction, world space
-  // TODO: replace all a_v to be in terms of A
-  auto a_v = Vector3f(A(0), A(1), A(2));
 
   // Iterating throught the pats, we will find the closest intersection
   double lowest_t = std::numeric_limits<double>::infinity();
@@ -455,7 +452,7 @@ void Assignment::drawIntersectTest(Camera *camera) {
   if (closest_pat != nullptr) {
     // Get the normal, apply inverse transform (normal form), then draw line
     Matrix<double, 4, 1> am;
-    am << a_v(0), a_v(1), a_v(2), 0;
+    am << A(0), A(1), A(2), 0;
     Matrix<double, 4, 1> bm;
     bm << B(0), B(1), B(2), 1;
 
