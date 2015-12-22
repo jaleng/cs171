@@ -451,20 +451,10 @@ void Assignment::drawIntersectTest(Camera *camera) {
   // Done finding closest intersection (if there is one)
   if (closest_pat != nullptr) {
     // Get the normal, apply inverse transform (normal form), then draw line
-    Matrix<double, 4, 1> am;
-    am << A(0), A(1), A(2), 0;
-    Matrix<double, 4, 1> bm;
-    bm << B(0), B(1), B(2), 1;
 
     auto pat = *closest_pat;
 
-    //auto bplusam = am + bm;
-    //auto bplusatm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bplusam;
-    //Vector3d bplusat(bplusatm(0)/bplusatm(3), bplusatm(1)/bplusatm(3),
-    //                 bplusatm(2)/bplusatm(3));
     auto bplusat = transform(B+A, (pat.tfm * getprmtfmmat(pat.prm)).inverse());
-    //auto btm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bm;
-    //Vector3d bt(btm(0)/btm(3), btm(1)/btm(3), btm(2)/btm(3));
     auto bt = transform(B, (pat.tfm * getprmtfmmat(pat.prm)).inverse());
     Vector3d at = bplusat - bt;
 
