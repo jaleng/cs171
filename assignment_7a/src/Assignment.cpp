@@ -459,12 +459,13 @@ void Assignment::drawIntersectTest(Camera *camera) {
     Vector3d at = bplusat - bt;
 
     auto v = at * lowest_t + bt;
-    Matrix<double, 4, 1> v_m;
-    v_m << v(0), v(1), v(2), 1;
+    // Matrix<double, 4, 1> v_m;
+    // v_m << v(0), v(1), v(2), 1;
 
-    auto tmp = getprmtfmmat(pat.prm) * v_m;
-    Vector3f scaled(tmp(0)/tmp(3), tmp(1)/tmp(3), tmp(2)/tmp(3));
-    auto nt = closest_pat->prm.getNormal(scaled);
+    // auto tmp = getprmtfmmat(pat.prm) * v_m;
+    // Vector3f scaled(tmp(0)/tmp(3), tmp(1)/tmp(3), tmp(2)/tmp(3));
+    auto scaled = transform(v, getprmtfmmat(pat.prm));
+    auto nt = closest_pat->prm.getNormal(scaled.cast<float>());
     Matrix<double, 4, 1> nt4;
     nt4 << nt(0), nt(1), nt(2), 1;
     // Transform normal back into world space
@@ -474,7 +475,9 @@ void Assignment::drawIntersectTest(Camera *camera) {
 
 
     // Get intersection point:
-    auto i4 = closest_pat->tfm * getprmtfmmat(pat.prm) * v_m;
+    // auto i4 = closest_pat->tfm * getprmtfmmat(pat.prm) * v_m;
+    auto i3 = transform(v, closest_pat->tfm * getprmtfmmat(pat.prm));
+    auto i4 = Vector4d{i3(0), i3(1), i3(2), 1};
     auto w = i4(3);
     Vector3d intersection_point(i4(0)/w, i4(1)/w, i4(2)/w);
     auto end_line = intersection_point + n3;
