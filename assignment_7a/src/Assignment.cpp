@@ -428,25 +428,20 @@ Vector3d getA(const Camera& camera) {
   return transform(Vector3d{0, 0, -1}, rot_mat);
 }
 
+Vector3d getB(const Camera& camera) {
+  return camera.getPosition().cast<double>();
+}
+
 void Assignment::drawIntersectTest(Camera *camera) {
   // Camera position, world space
-  auto b_v = camera->getPosition();
-
-  // Get camera direction, world space
-  Matrix<double, 4, 1> a0_mat;
-  a0_mat << 0, 0, -1, 1;
-  // Apply camera rotation to a0 to get a_v
-  // auto axis = camera->getAxis();
-  // auto angle = camera->getAngle();
-  // auto rot_mat = tfm2mat(Transformation(
-  //                          ROTATE, axis(0), axis(1), axis(2), angle));
-  // Matrix<double, 4, 1> a_mat;
-  // a_mat = rot_mat * a0_mat;
-
+  // auto b_v = camera->getPosition();
 
   auto A = getA(*camera);
-  auto B = Vector3d{b_v(0), b_v(1), b_v(2)};
-  
+  auto B = getB(*camera);
+
+  // TODO: replace all instances of b_v with things in terms of B
+  auto b_v = B;
+
   // Camera direction, world space
   auto a_v = Vector3f(A(0), A(1), A(2));
 
