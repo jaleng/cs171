@@ -463,8 +463,9 @@ void Assignment::drawIntersectTest(Camera *camera) {
     //Vector3d bplusat(bplusatm(0)/bplusatm(3), bplusatm(1)/bplusatm(3),
     //                 bplusatm(2)/bplusatm(3));
     auto bplusat = transform(B+A, (pat.tfm * getprmtfmmat(pat.prm)).inverse());
-    auto btm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bm;
-    Vector3d bt(btm(0)/btm(3), btm(1)/btm(3), btm(2)/btm(3));
+    //auto btm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bm;
+    //Vector3d bt(btm(0)/btm(3), btm(1)/btm(3), btm(2)/btm(3));
+    auto bt = transform(B, (pat.tfm * getprmtfmmat(pat.prm)).inverse());
     Vector3d at = bplusat - bt;
 
     auto v = at * lowest_t + bt;
