@@ -439,10 +439,8 @@ void Assignment::drawIntersectTest(Camera *camera) {
   auto A = getA(*camera);
   auto B = getB(*camera);
 
-  // TODO: replace all instances of b_v with things in terms of B
-  auto b_v = B;
-
   // Camera direction, world space
+  // TODO: replace all a_v to be in terms of A
   auto a_v = Vector3f(A(0), A(1), A(2));
 
   // Iterating throught the pats, we will find the closest intersection
@@ -459,7 +457,7 @@ void Assignment::drawIntersectTest(Camera *camera) {
     Matrix<double, 4, 1> am;
     am << a_v(0), a_v(1), a_v(2), 0;
     Matrix<double, 4, 1> bm;
-    bm << b_v(0), b_v(1), b_v(2), 1;
+    bm << B(0), B(1), B(2), 1;
 
     auto pat = *closest_pat;
 
