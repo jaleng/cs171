@@ -449,77 +449,7 @@ void Assignment::drawIntersectTest(Camera *camera) {
   // Build vector of PATs by traversing tree
   auto pats = getpats();
   closest_pat = get_closest_PAT_thru_ray(*pats, A, B, &lowest_t);
-  // for (auto& pat : *pats) {
-  //   // Transform a_v and b_v using the primitive's transform
-  //   Matrix<double, 4, 1> am;
-  //   am << a_v(0), a_v(1), a_v(2), 0;
-  //   Matrix<double, 4, 1> bm;
-  //   bm << b_v(0), b_v(1), b_v(2), 1;
 
-  //   auto bplusam = am + bm;
-  //   auto bplusatm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bplusam;
-  //   Vector3d bplusat(bplusatm(0)/bplusatm(3), bplusatm(1)/bplusatm(3),
-  //                    bplusatm(2)/bplusatm(3));
-  //   auto btm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bm;
-  //   // b (ie camera position) transformed
-  //   Vector3d bt(btm(0)/btm(3), btm(1)/btm(3), btm(2)/btm(3));
-  //   // a (ie camera direction) transformed
-  //   Vector3d at = bplusat - bt;
-
-  //   auto a = at.dot(at);
-  //   auto b = 2*(at.dot(bt));
-  //   auto c = bt.dot(bt) - 3.0;
-
-  //   auto discriminant = b*b - 4*a*c;
-  //   if (discriminant < 0) {
-  //     // No intersection
-  //     continue;
-  //   }
-
-  //   auto tp = tplus(a, b, c);
-  //   auto tm = tminus(a, b, c);
-
-  //   if (tp < 0 && tm < 0) {
-  //     // sq is behind camera, no intersection
-  //     continue;
-  //   } else if (tp > 0 && tm > 0) {
-  //     // sq bounding box is in front of camera
-  //     auto tmc = findIntersection(pat.prm.getExp0(),
-  //                                 pat.prm.getExp1(),
-  //                                 at,
-  //                                 bt,
-  //                                 tm);
-  //     if (tmc.hit == true && tmc.t < lowest_t) {
-  //       // Found a new closest intersection
-  //       lowest_t = tmc.t;
-  //       closest_pat = &pat;
-  //     }
-  //   } else {
-  //     // Find intersection using tp
-  //     auto tpc = findIntersection(pat.prm.getExp0(),
-  //                                 pat.prm.getExp1(),
-  //                                 at,
-  //                                 bt,
-  //                                 tp);
-
-  //     // Find intersection using tm
-  //     auto tmc = findIntersection(pat.prm.getExp0(),
-  //                                 pat.prm.getExp1(),
-  //                                 at,
-  //                                 bt,
-  //                                 tm);
-
-  //     if (tpc.hit && tmc.hit && tpc.t > 0 && tmc.t > 0) {
-  //       // use lowest tc
-  //       auto tf = min(tpc.t, tmc.t);
-  //       if (tf < lowest_t) {
-  //         // Found a new closest intersection
-  //         lowest_t = tf;
-  //         closest_pat = &pat;
-  //       }
-  //     }
-  //   }
-  // }
   // Done finding closest intersection (if there is one)
   if (closest_pat != nullptr) {
     // Get the normal, apply inverse transform (normal form), then draw line
