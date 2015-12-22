@@ -336,49 +336,33 @@ void printMatrix(MatrixXd m, std::string msg = "") {
   }
 }
 
-void Assignment::drawIntersectTest(Camera *camera) {
-  // Camera position, world space
-  auto b_v = camera->getPosition();
 
-  // Get camera direction, world space
-  Matrix<double, 4, 1> a0_mat;
-  a0_mat << 0, 0, -1, 1;
-  // Apply camera rotation to a0 to get a_v
-  auto axis = camera->getAxis();
-  auto angle = camera->getAngle();
-  auto rot_mat = tfm2mat(Transformation(
-                           ROTATE, axis(0), axis(1), axis(2), angle));
-  Matrix<double, 4, 1> a_mat;
-  a_mat = rot_mat * a0_mat;
-  // Camera direction, world space
-  auto a_v = Vector3f(a_mat(0)/a_mat(3), a_mat(1)/a_mat(3), a_mat(2)/a_mat(3));
+Vector3d transform(Vector3d v, Matrix<double, 4, 4> tfm) {
+  Vector4d v4;
+  v4 << v(0), v(1), v(2), 1;
+  auto tmp = tfm * v4;
+  return Vector3d(tmp(0)/tmp(3), tmp(1)/tmp(3), tmp(2)/tmp(3));
+}
 
+
+
+PAT* get_closest_PAT_thru_ray(vector<PAT>& pats, Vector3d A, Vector3d B, double *t_save=nullptr) {
   // Iterating throught the pats, we will find the closest intersection
   double lowest_t = std::numeric_limits<double>::infinity();
   PAT* closest_pat = nullptr;
 
-  // Build vector of PATs by traversing tree
-  auto pats = getpats();
-  for (auto& pat : *pats) {
-    // Transform a_v and b_v using the primitive's transform
-    Matrix<double, 4, 1> am;
-    am << a_v(0), a_v(1), a_v(2), 0;
-    Matrix<double, 4, 1> bm;
-    bm << b_v(0), b_v(1), b_v(2), 1;
+  for (auto& pat : pats) {
+    auto B_transformed = transform(B, (pat.tfm
+                                       * getprmtfmmat(pat.prm)).inverse());
+    auto BplusA_transformed =
+      transform(B+A, (pat.tfm * getprmtfmmat(pat.prm)).inverse());
+    auto A_transformed = BplusA_transformed - B_transformed;
 
-    auto bplusam = am + bm;
-    auto bplusatm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bplusam;
-    Vector3d bplusat(bplusatm(0)/bplusatm(3), bplusatm(1)/bplusatm(3),
-                     bplusatm(2)/bplusatm(3));
-    auto btm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bm;
-    // b (ie camera position) transformed
-    Vector3d bt(btm(0)/btm(3), btm(1)/btm(3), btm(2)/btm(3));
-    // a (ie camera direction) transformed
-    Vector3d at = bplusat - bt;
+    // Prepare for intersect finding
 
-    auto a = at.dot(at);
-    auto b = 2*(at.dot(bt));
-    auto c = bt.dot(bt) - 3.0;
+    auto a = A_transformed.dot(A_transformed);
+    auto b = 2*(A_transformed.dot(B_transformed));
+    auto c = B_transformed.dot(B_transformed) - 3.0;
 
     auto discriminant = b*b - 4*a*c;
     if (discriminant < 0) {
@@ -396,8 +380,8 @@ void Assignment::drawIntersectTest(Camera *camera) {
       // sq bounding box is in front of camera
       auto tmc = findIntersection(pat.prm.getExp0(),
                                   pat.prm.getExp1(),
-                                  at,
-                                  bt,
+                                  A_transformed,
+                                  B_transformed,
                                   tm);
       if (tmc.hit == true && tmc.t < lowest_t) {
         // Found a new closest intersection
@@ -408,15 +392,15 @@ void Assignment::drawIntersectTest(Camera *camera) {
       // Find intersection using tp
       auto tpc = findIntersection(pat.prm.getExp0(),
                                   pat.prm.getExp1(),
-                                  at,
-                                  bt,
+                                  A_transformed,
+                                  B_transformed,
                                   tp);
 
       // Find intersection using tm
       auto tmc = findIntersection(pat.prm.getExp0(),
                                   pat.prm.getExp1(),
-                                  at,
-                                  bt,
+                                  A_transformed,
+                                  B_transformed,
                                   tm);
 
       if (tpc.hit && tmc.hit && tpc.t > 0 && tmc.t > 0) {
@@ -430,6 +414,112 @@ void Assignment::drawIntersectTest(Camera *camera) {
       }
     }
   }
+  if (t_save != nullptr) {
+    *t_save = lowest_t;
+  }
+  return closest_pat;
+}
+
+void Assignment::drawIntersectTest(Camera *camera) {
+  // Camera position, world space
+  auto b_v = camera->getPosition();
+
+  // Get camera direction, world space
+  Matrix<double, 4, 1> a0_mat;
+  a0_mat << 0, 0, -1, 1;
+  // Apply camera rotation to a0 to get a_v
+  auto axis = camera->getAxis();
+  auto angle = camera->getAngle();
+  auto rot_mat = tfm2mat(Transformation(
+                           ROTATE, axis(0), axis(1), axis(2), angle));
+  Matrix<double, 4, 1> a_mat;
+  a_mat = rot_mat * a0_mat;
+
+
+  auto A = Vector3d{a_mat(0)/a_mat(3), a_mat(1)/a_mat(3), a_mat(2)/a_mat(3)};
+  auto B = Vector3d{b_v(0), b_v(1), b_v(2)};
+  
+  // Camera direction, world space
+  auto a_v = Vector3f(a_mat(0)/a_mat(3), a_mat(1)/a_mat(3), a_mat(2)/a_mat(3));
+
+  // Iterating throught the pats, we will find the closest intersection
+  double lowest_t = std::numeric_limits<double>::infinity();
+  PAT* closest_pat = nullptr;
+
+  // Build vector of PATs by traversing tree
+  auto pats = getpats();
+  closest_pat = get_closest_PAT_thru_ray(*pats, A, B, &lowest_t);
+  // for (auto& pat : *pats) {
+  //   // Transform a_v and b_v using the primitive's transform
+  //   Matrix<double, 4, 1> am;
+  //   am << a_v(0), a_v(1), a_v(2), 0;
+  //   Matrix<double, 4, 1> bm;
+  //   bm << b_v(0), b_v(1), b_v(2), 1;
+
+  //   auto bplusam = am + bm;
+  //   auto bplusatm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bplusam;
+  //   Vector3d bplusat(bplusatm(0)/bplusatm(3), bplusatm(1)/bplusatm(3),
+  //                    bplusatm(2)/bplusatm(3));
+  //   auto btm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * bm;
+  //   // b (ie camera position) transformed
+  //   Vector3d bt(btm(0)/btm(3), btm(1)/btm(3), btm(2)/btm(3));
+  //   // a (ie camera direction) transformed
+  //   Vector3d at = bplusat - bt;
+
+  //   auto a = at.dot(at);
+  //   auto b = 2*(at.dot(bt));
+  //   auto c = bt.dot(bt) - 3.0;
+
+  //   auto discriminant = b*b - 4*a*c;
+  //   if (discriminant < 0) {
+  //     // No intersection
+  //     continue;
+  //   }
+
+  //   auto tp = tplus(a, b, c);
+  //   auto tm = tminus(a, b, c);
+
+  //   if (tp < 0 && tm < 0) {
+  //     // sq is behind camera, no intersection
+  //     continue;
+  //   } else if (tp > 0 && tm > 0) {
+  //     // sq bounding box is in front of camera
+  //     auto tmc = findIntersection(pat.prm.getExp0(),
+  //                                 pat.prm.getExp1(),
+  //                                 at,
+  //                                 bt,
+  //                                 tm);
+  //     if (tmc.hit == true && tmc.t < lowest_t) {
+  //       // Found a new closest intersection
+  //       lowest_t = tmc.t;
+  //       closest_pat = &pat;
+  //     }
+  //   } else {
+  //     // Find intersection using tp
+  //     auto tpc = findIntersection(pat.prm.getExp0(),
+  //                                 pat.prm.getExp1(),
+  //                                 at,
+  //                                 bt,
+  //                                 tp);
+
+  //     // Find intersection using tm
+  //     auto tmc = findIntersection(pat.prm.getExp0(),
+  //                                 pat.prm.getExp1(),
+  //                                 at,
+  //                                 bt,
+  //                                 tm);
+
+  //     if (tpc.hit && tmc.hit && tpc.t > 0 && tmc.t > 0) {
+  //       // use lowest tc
+  //       auto tf = min(tpc.t, tmc.t);
+  //       if (tf < lowest_t) {
+  //         // Found a new closest intersection
+  //         lowest_t = tf;
+  //         closest_pat = &pat;
+  //       }
+  //     }
+  //   }
+  // }
   // Done finding closest intersection (if there is one)
   if (closest_pat != nullptr) {
     // Get the normal, apply inverse transform (normal form), then draw line
