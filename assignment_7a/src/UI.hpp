@@ -27,13 +27,13 @@ struct Camera {
     Camera(float *position, float *axis, float angle, float near, float far,
         float fov, float aspect);
 
-    Vector3f getPosition();
-    Vector3f getAxis();
-    float getAngle();
-    float getNear();
-    float getFar();
-    float getFov();
-    float getAspect();
+    Vector3f getPosition() const;
+    Vector3f getAxis() const;
+    float getAngle() const;
+    float getNear() const;
+    float getFar() const;
+    float getFov() const;
+    float getAspect() const;
 };
 
 class UI {

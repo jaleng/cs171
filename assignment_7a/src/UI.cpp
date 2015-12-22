@@ -51,31 +51,31 @@ Camera::Camera(float *position, float *axis, float angle, float near, float far,
     this->aspect = aspect;
 }
 
-Vector3f Camera::getPosition() {
+Vector3f Camera::getPosition() const {
     return Vector3f(this->position.x, this->position.y, this->position.z);
 }
 
-Vector3f Camera::getAxis() {
+Vector3f Camera::getAxis() const {
     return Vector3f(this->axis.x, this->axis.y, this->axis.z);
 }
 
-float Camera::getAngle() {
+float Camera::getAngle() const {
     return this->angle;
 }
 
-float Camera::getNear() {
+float Camera::getNear() const {
     return this->near;
 }
 
-float Camera::getFar() {
+float Camera::getFar() const {
     return this->far;
 }
 
-float Camera::getFov() {
+float Camera::getFov() const {
     return this->fov;
 }
 
-float Camera::getAspect() {
+float Camera::getAspect() const{
     return this->aspect;
 }
 
