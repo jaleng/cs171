@@ -469,32 +469,14 @@ void Assignment::drawIntersectTest(Camera *camera) {
     Vector3d at = bplusat - bt;
 
     auto v = at * lowest_t + bt;
-    // Matrix<double, 4, 1> v_m;
-    // v_m << v(0), v(1), v(2), 1;
 
-    // auto tmp = getprmtfmmat(pat.prm) * v_m;
-    // Vector3f scaled(tmp(0)/tmp(3), tmp(1)/tmp(3), tmp(2)/tmp(3));
     auto scaled = transform(v, getprmtfmmat(pat.prm));
     Vector3d nt = closest_pat->prm.getNormal(scaled.cast<float>()).cast<double>();
-    //Matrix<double, 4, 1> nt4;
-    //nt4 << nt(0), nt(1), nt(2), 1;
-    // Transform normal back into world space
-    //auto n4 = (closest_pat->twot * getprmtfmmat(pat.prm)).inverse().transpose() * nt4;
-    //Vector3d prev_n3(n4(0), n4(1), n4(2));
-    //prev_n3 /= prev_n3.norm();
-
-
-    //Vector3d ntnew = closest_pat->prm.getNormal(scaled.cast<float>()).cast<double>();
     auto n3 = transformNormal(nt, (closest_pat->twot * getprmtfmmat(pat.prm)));
     n3 /= n3.norm();
 
-
     // Get intersection point:
-    // auto i4 = closest_pat->tfm * getprmtfmmat(pat.prm) * v_m;
-    auto i3 = transform(v, closest_pat->tfm * getprmtfmmat(pat.prm));
-    auto i4 = Vector4d{i3(0), i3(1), i3(2), 1};
-    auto w = i4(3);
-    Vector3d intersection_point(i4(0)/w, i4(1)/w, i4(2)/w);
+    Vector3d intersection_point = transform(v, closest_pat->tfm * getprmtfmmat(pat.prm));
     auto end_line = intersection_point + n3;
 
     //// Draw line from intersection point along the surface normal
