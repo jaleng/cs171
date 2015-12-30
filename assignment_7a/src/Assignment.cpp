@@ -177,6 +177,7 @@ std::unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {
   return std::move(v);
 }
 
+/** Get vector of PATs from command line state **/
 std::unique_ptr<vector<PAT>> getpats() {
   const Line* cur_state = CommandLine::getState();
   Renderable* ren = nullptr;
@@ -188,12 +189,16 @@ std::unique_ptr<vector<PAT>> getpats() {
   }
 }
 
+/** Get primitive transformation matrix
+ *  (doesn't count coefficient scaling)
+ **/
 Matrix<double, 4, 4> getprmtfmmat(const Primitive& prm) {
   auto coeff = prm.getCoeff();
   Transformation t{SCALE, coeff[0], coeff[1], coeff[2], 1};
   return tfm2mat(t);
 }
 
+/** Apply transformation to a vector **/
 Vector3d transform(Vector3d v, Matrix<double, 4, 4> tfm) {
   Vector4d v4;
   v4 << v(0), v(1), v(2), 1;
@@ -201,6 +206,7 @@ Vector3d transform(Vector3d v, Matrix<double, 4, 4> tfm) {
   return Vector3d(tmp(0)/tmp(3), tmp(1)/tmp(3), tmp(2)/tmp(3));
 }
 
+/** Draw grid of small spheres, red if inside an object, else blue **/
 void Assignment::drawIOTest() {
   // Build vector of PATs by traversing tree
   auto pats = getpats();
@@ -338,6 +344,7 @@ void printMatrix(MatrixXd m, std::string msg = "") {
   }
 }
 
+/** Get first PAT that a ray hits **/
 PAT* get_closest_PAT_thru_ray(vector<PAT>& pats,
                               Vector3d A,
                               Vector3d B,
@@ -415,6 +422,7 @@ PAT* get_closest_PAT_thru_ray(vector<PAT>& pats,
   return closest_pat;
 }
 
+/** Get camera look direction double vector **/
 Vector3d getCameraLook(const Camera& camera) {
   auto axis = camera.getAxis();
   auto angle = camera.getAngle();
@@ -423,10 +431,12 @@ Vector3d getCameraLook(const Camera& camera) {
   return transform(Vector3d{0, 0, -1}, rot_mat);
 }
 
+/** Get camera position double vector **/
 Vector3d getCameraPosition(const Camera& camera) {
   return camera.getPosition().cast<double>();
 }
 
+/** Apply transformation to normal vector **/
 Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {
   Matrix<double, 3, 3> tfm3x3;
   tfm3x3 <<
@@ -436,6 +446,7 @@ Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {
   return tfm3x3.inverse().transpose() * v;
 }
 
+/** Draw a line segment with spheres at the start and end **/
 void drawProminentLineSegment(Vector3d start_line, Vector3d end_line) {
   draw_red_sphere(start_line(0), start_line(1),
                   start_line(2));
@@ -451,6 +462,9 @@ void drawProminentLineSegment(Vector3d start_line, Vector3d end_line) {
   glEnd();
 }
 
+/** Draw the normal vector on the surface where the camera look ray
+ *  first hits.
+ **/
 void Assignment::drawIntersectTest(Camera *camera) {
   auto camera_look = getCameraLook(*camera);
   auto camera_position = getCameraPosition(*camera);
