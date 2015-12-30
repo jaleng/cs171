@@ -1,5 +1,5 @@
 
-Assignment.cpp,2256
+Assignment.cpp,2300
 Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {tfm2mat17,288
 Matrix<double, 4, 4> tfmvec2mat(const vector<Transformation>& tfmvec) {tfmvec2mat68,1494
 Matrix<double, 4, 4> tfmvec2mat_wo_tl(const vector<Transformation>& tfmvec) {tfmvec2mat_wo_tl81,1864
@@ -29,10 +29,10 @@ MissOrHit findIntersection(double e, double n,findIntersection281,7946
 void printMatrix(MatrixXd m, std::string msg = "") {printMatrix326,9337
 Vector3d transform(Vector3d v, Matrix<double, 4, 4> tfm) {transform340,9630
 PAT* get_closest_PAT_thru_ray(vector<PAT>& pats, Vector3d A, Vector3d B, double *t_save=nullptr) {get_closest_PAT_thru_ray349,9825
-Vector3d getA(const Camera& camera) {getA423,12263
-Vector3d getB(const Camera& camera) {getB431,12531
-Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {transformNormal435,12618
-void Assignment::drawIntersectTest(Camera *camera) {drawIntersectTest445,12884
+Vector3d getCameraLook(const Camera& camera) {getCameraLook423,12263
+Vector3d getCameraPosition(const Camera& camera) {getCameraPosition431,12540
+Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {transformNormal435,12640
+void Assignment::drawIntersectTest(Camera *camera) {drawIntersectTest445,12906
 
 Assignment.hpp,78
 #define ASSIGNMENT_HPPASSIGNMENT_HPP2,23

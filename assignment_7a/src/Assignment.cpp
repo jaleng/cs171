@@ -420,7 +420,7 @@ PAT* get_closest_PAT_thru_ray(vector<PAT>& pats, Vector3d A, Vector3d B, double 
   return closest_pat;
 }
 
-Vector3d getA(const Camera& camera) {
+Vector3d getCameraLook(const Camera& camera) {
   auto axis = camera.getAxis();
   auto angle = camera.getAngle();
   auto rot_mat = tfm2mat(Transformation(
@@ -428,7 +428,7 @@ Vector3d getA(const Camera& camera) {
   return transform(Vector3d{0, 0, -1}, rot_mat);
 }
 
-Vector3d getB(const Camera& camera) {
+Vector3d getCameraPosition(const Camera& camera) {
   return camera.getPosition().cast<double>();
 }
 
@@ -445,39 +445,49 @@ Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {
 void Assignment::drawIntersectTest(Camera *camera) {
   // Camera position, world space
 
-  auto camera_look = getA(*camera);
-  auto camera_position = getB(*camera);
+  auto camera_look = getCameraLook(*camera);
+  auto camera_position = getCameraPosition(*camera);
 
   // Camera direction, world space
 
   // Iterating throught the pats, we will find the closest intersection
-  double lowest_t = std::numeric_limits<double>::infinity();
+  double lowest_distance = std::numeric_limits<double>::infinity();
   PAT* closest_pat = nullptr;
 
   // Build vector of PATs by traversing tree
   auto pats = getpats();
-  closest_pat = get_closest_PAT_thru_ray(*pats, camera_look, camera_position, &lowest_t);
+  closest_pat = get_closest_PAT_thru_ray(*pats, camera_look, camera_position, &lowest_distance);
 
   // Done finding closest intersection (if there is one)
   if (closest_pat != nullptr) {
     // Get the normal, apply inverse transform (normal form), then draw line
 
     auto pat = *closest_pat;
+    Matrix4d pat_transform_and_scale_matrix = pat.tfm * getprmtfmmat(pat.prm);
 
-    auto bplusat = transform(camera_position+camera_look, (pat.tfm * getprmtfmmat(pat.prm)).inverse());
-    auto bt = transform(camera_position, (pat.tfm * getprmtfmmat(pat.prm)).inverse());
-    Vector3d at = bplusat - bt;
+    Vector3d camera_position_plus_look_transformed =
+      transform(camera_position + camera_look,
+                pat_transform_and_scale_matrix.inverse());
 
-    auto v = at * lowest_t + bt;
+    Vector3d camera_position_transformed =
+      transform(camera_position,
+                pat_transform_and_scale_matrix.inverse());
 
-    auto scaled = transform(v, getprmtfmmat(pat.prm));
-    Vector3d nt = closest_pat->prm.getNormal(scaled.cast<float>()).cast<double>();
-    auto n3 = transformNormal(nt, (closest_pat->twot * getprmtfmmat(pat.prm)));
-    n3 /= n3.norm();
+    Vector3d camera_look_transformed = camera_position_plus_look_transformed
+                  - camera_position_transformed;
+
+    auto intersection_transformed =
+      camera_position_transformed
+      + camera_look_transformed * lowest_distance;
+
+    auto scaled = transform(intersection_transformed, getprmtfmmat(pat.prm));
+    Vector3d normal_transformed = pat.prm.getNormal(scaled.cast<float>()).cast<double>();
+    Vector3d normal_world = transformNormal(normal_transformed, (closest_pat->twot * getprmtfmmat(pat.prm)));
+    normal_world /= normal_world.norm();
 
     // Get intersection point:
-    Vector3d intersection_point = transform(v, closest_pat->tfm * getprmtfmmat(pat.prm));
-    auto end_line = intersection_point + n3;
+    Vector3d intersection_point = transform(intersection_transformed, closest_pat->tfm * getprmtfmmat(pat.prm));
+    auto end_line = intersection_point + normal_world;
 
     //// Draw line from intersection point along the surface normal
     // Draw red sphere at intersection
