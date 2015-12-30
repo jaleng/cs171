@@ -501,7 +501,7 @@ void Assignment::drawIntersectTest(Camera *camera) {
                                     scaled.cast<float>()).cast<double>();
     Vector3d normal_world = transformNormal(normal_transformed,
                                             pat_transform_and_scale_matrix);
-    normal_world /= normal_world.norm();
+    normal_world.normalize();
 
     Vector3d intersection_point = transform(intersection_transformed,
                                             pat_transform_and_scale_matrix);
