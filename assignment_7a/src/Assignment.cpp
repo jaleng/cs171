@@ -441,8 +441,6 @@ Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {
     tfm(0, 0), tfm(0, 1), tfm(0, 2),
     tfm(1, 0), tfm(1, 1), tfm(1, 2),
     tfm(2, 0), tfm(2, 1), tfm(2, 2);
-  //printMatrix(tfm3x3.inverse().transpose(), "3x3 inverse transpose:\n");
-  printMatrix(v, "\nv inside transformNormal:\n");
   return tfm3x3.inverse().transpose() * v;
 }
 
@@ -481,26 +479,17 @@ void Assignment::drawIntersectTest(Camera *camera) {
     // Vector3f scaled(tmp(0)/tmp(3), tmp(1)/tmp(3), tmp(2)/tmp(3));
     auto scaled = transform(v, getprmtfmmat(pat.prm));
     auto nt = closest_pat->prm.getNormal(scaled.cast<float>()).cast<double>();
-    printMatrix(nt, "\nnt right after creation:\n");
     Matrix<double, 4, 1> nt4;
     nt4 << nt(0), nt(1), nt(2), 1;
-    printMatrix(nt, "\nnt after nt4 made:\n");
     // Transform normal back into world space
     auto n4 = (closest_pat->twot * getprmtfmmat(pat.prm)).inverse().transpose() * nt4;
-    printMatrix(nt, "\nnt after n4 made:\n");
-    printMatrix(nt4, "\nnt4:\n");
     Vector3d prev_n3(n4(0), n4(1), n4(2));
-    //printMatrix(prev_n3, "previous n3 before normalization:\n");
     prev_n3 /= prev_n3.norm();
-    //printMatrix(prev_n3, "previous n3:\n");
 
 
     Vector3d ntnew = closest_pat->prm.getNormal(scaled.cast<float>()).cast<double>();
-    printMatrix(ntnew, "\nntnew before making n3:\n");
     auto n3 = transformNormal(ntnew, (closest_pat->twot * getprmtfmmat(pat.prm)));
-    //printMatrix(n3, "current n3 before normalization:\n");
     n3 /= n3.norm();
-    //printMatrix(n3, "current n3:\n");
 
 
     // Get intersection point:
@@ -510,10 +499,6 @@ void Assignment::drawIntersectTest(Camera *camera) {
     auto w = i4(3);
     Vector3d intersection_point(i4(0)/w, i4(1)/w, i4(2)/w);
     auto end_line = intersection_point + n3;
-
-    // DEBUG
-    //printMatrix(n3, "Normal: \n");
-    // ENDEBUG
 
     //// Draw line from intersection point along the surface normal
     // Draw red sphere at intersection
