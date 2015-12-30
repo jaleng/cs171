@@ -445,7 +445,7 @@ Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {
 void Assignment::drawIntersectTest(Camera *camera) {
   // Camera position, world space
 
-  auto A = getA(*camera);
+  auto camera_look = getA(*camera);
   auto camera_position = getB(*camera);
 
   // Camera direction, world space
@@ -456,7 +456,7 @@ void Assignment::drawIntersectTest(Camera *camera) {
 
   // Build vector of PATs by traversing tree
   auto pats = getpats();
-  closest_pat = get_closest_PAT_thru_ray(*pats, A, camera_position, &lowest_t);
+  closest_pat = get_closest_PAT_thru_ray(*pats, camera_look, camera_position, &lowest_t);
 
   // Done finding closest intersection (if there is one)
   if (closest_pat != nullptr) {
@@ -464,7 +464,7 @@ void Assignment::drawIntersectTest(Camera *camera) {
 
     auto pat = *closest_pat;
 
-    auto bplusat = transform(camera_position+A, (pat.tfm * getprmtfmmat(pat.prm)).inverse());
+    auto bplusat = transform(camera_position+camera_look, (pat.tfm * getprmtfmmat(pat.prm)).inverse());
     auto bt = transform(camera_position, (pat.tfm * getprmtfmmat(pat.prm)).inverse());
     Vector3d at = bplusat - bt;
 
