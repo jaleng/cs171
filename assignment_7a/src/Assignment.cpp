@@ -433,9 +433,6 @@ Vector3d getB(const Camera& camera) {
 }
 
 Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {
-  //Vector4d v4;
-  //v4 << v(0), v(1), v(2), 0;
-  //auto tmp = tfm.inverse().transpose() * v4;
   Matrix<double, 3, 3> tfm3x3;
   tfm3x3 <<
     tfm(0, 0), tfm(0, 1), tfm(0, 2),
@@ -478,17 +475,17 @@ void Assignment::drawIntersectTest(Camera *camera) {
     // auto tmp = getprmtfmmat(pat.prm) * v_m;
     // Vector3f scaled(tmp(0)/tmp(3), tmp(1)/tmp(3), tmp(2)/tmp(3));
     auto scaled = transform(v, getprmtfmmat(pat.prm));
-    auto nt = closest_pat->prm.getNormal(scaled.cast<float>()).cast<double>();
-    Matrix<double, 4, 1> nt4;
-    nt4 << nt(0), nt(1), nt(2), 1;
+    Vector3d nt = closest_pat->prm.getNormal(scaled.cast<float>()).cast<double>();
+    //Matrix<double, 4, 1> nt4;
+    //nt4 << nt(0), nt(1), nt(2), 1;
     // Transform normal back into world space
-    auto n4 = (closest_pat->twot * getprmtfmmat(pat.prm)).inverse().transpose() * nt4;
-    Vector3d prev_n3(n4(0), n4(1), n4(2));
-    prev_n3 /= prev_n3.norm();
+    //auto n4 = (closest_pat->twot * getprmtfmmat(pat.prm)).inverse().transpose() * nt4;
+    //Vector3d prev_n3(n4(0), n4(1), n4(2));
+    //prev_n3 /= prev_n3.norm();
 
 
-    Vector3d ntnew = closest_pat->prm.getNormal(scaled.cast<float>()).cast<double>();
-    auto n3 = transformNormal(ntnew, (closest_pat->twot * getprmtfmmat(pat.prm)));
+    //Vector3d ntnew = closest_pat->prm.getNormal(scaled.cast<float>()).cast<double>();
+    auto n3 = transformNormal(nt, (closest_pat->twot * getprmtfmmat(pat.prm)));
     n3 /= n3.norm();
 
 
