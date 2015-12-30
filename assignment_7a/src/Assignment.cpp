@@ -107,10 +107,8 @@ double sq_io(double x, double y, double z, double e, double n) {
 struct PAT {
   Primitive prm;
   Matrix<double, 4, 4> tfm;
-  Matrix<double, 4, 4> twot;
-  PAT(const Primitive& _prm, const Matrix<double, 4, 4> _tfm,
-      const Matrix<double, 4, 4> _twot)
-    : prm{_prm}, tfm{_tfm}, twot{_twot}{}
+  PAT(const Primitive& _prm, const Matrix<double, 4, 4> _tfm)
+    : prm{_prm}, tfm{_tfm} {}
 };
 
 /** Draw a sphere at (x,y,z) of a given color with small jitter **/
@@ -152,23 +150,20 @@ std::unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {
     {
     Matrix<double, 4, 4> m;
     m.setIdentity();
-    v->emplace_back(dynamic_cast<const Primitive&>(root), m, m);
+    v->emplace_back(dynamic_cast<const Primitive&>(root), m);
     break;
     }
   case OBJ:
     {
     auto obj = dynamic_cast<const Object&>(root);
     auto overall_tfm = tfmvec2mat(obj.getOverallTransformation());
-    auto overall_twot = tfmvec2mat_wo_tl(obj.getOverallTransformation());
     for (const auto& item : obj.getChildren()) {
       auto child = item.second;
       auto child_tfm = tfmvec2mat(child.transformations);
-      auto child_twot = tfmvec2mat_wo_tl(child.transformations);
       auto child_made_pat_vec = buildPATs(*Renderable::get(child.name), level + 1);
       for (auto& child_made_pat : *child_made_pat_vec) {
         v->emplace_back(child_made_pat.prm,
-                        overall_tfm * child_tfm * child_made_pat.tfm,
-                        overall_twot * child_twot * child_made_pat.twot);
+                        overall_tfm * child_tfm * child_made_pat.tfm);
       }
     }
     }
@@ -482,11 +477,13 @@ void Assignment::drawIntersectTest(Camera *camera) {
 
     auto scaled = transform(intersection_transformed, getprmtfmmat(pat.prm));
     Vector3d normal_transformed = pat.prm.getNormal(scaled.cast<float>()).cast<double>();
-    Vector3d normal_world = transformNormal(normal_transformed, (closest_pat->twot * getprmtfmmat(pat.prm)));
+    Vector3d normal_world = transformNormal(normal_transformed,
+                                            pat_transform_and_scale_matrix);
     normal_world /= normal_world.norm();
 
     // Get intersection point:
-    Vector3d intersection_point = transform(intersection_transformed, closest_pat->tfm * getprmtfmmat(pat.prm));
+    Vector3d intersection_point = transform(intersection_transformed,
+                                            pat_transform_and_scale_matrix);
     auto end_line = intersection_point + normal_world;
 
     //// Draw line from intersection point along the surface normal

@@ -1,5 +1,5 @@
 
-Assignment.cpp,2300
+Assignment.cpp,2257
 Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {tfm2mat17,288
 Matrix<double, 4, 4> tfmvec2mat(const vector<Transformation>& tfmvec) {tfmvec2mat68,1494
 Matrix<double, 4, 4> tfmvec2mat_wo_tl(const vector<Transformation>& tfmvec) {tfmvec2mat_wo_tl81,1864
@@ -7,32 +7,31 @@ double sq_io(double x, double y, double z, double e, double n) {sq_io98,2289
 struct PAT {PAT107,2590
   Primitive prm;prm108,2603
   Matrix<double, 4, 4> tfm;tfm109,2620
-  Matrix<double, 4, 4> twot;twot110,2648
-  PAT(const Primitive& _prm, const Matrix<double, 4, 4> _tfm,PAT111,2677
-void draw_sphere(double x, double y, double z, const float color[3]) {draw_sphere117,2893
-void draw_blue_sphere(double x, double y, double z) {draw_blue_sphere131,3423
-void draw_red_sphere(double x, double y, double z) {draw_red_sphere137,3618
-std::unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {buildPATs143,3803
-std::unique_ptr<vector<PAT>> getpats() {getpats184,5136
-Matrix<double, 4, 4> getprmtfmmat(const Primitive& prm) {getprmtfmmat195,5426
-void Assignment::drawIOTest() {drawIOTest201,5599
-double tminus(double a, double b, double c) {tminus242,6870
-double tplus(double a, double b, double c) {tplus251,7079
-Vector3d grad_sq_io(double x, double y, double z, double e, double n) {grad_sq_io260,7336
-struct MissOrHit {MissOrHit271,7705
-  bool hit;hit272,7724
-  double t;t273,7736
-  MissOrHit(bool _hit, double _t) : hit{_hit}, t{_t} {}MissOrHit274,7748
-  explicit MissOrHit(bool _hit) : hit{false}, t{0} {MissOrHit275,7804
-  explicit MissOrHit(double _t) : hit{true}, t{_t} {}MissOrHit278,7888
-MissOrHit findIntersection(double e, double n,findIntersection281,7946
-void printMatrix(MatrixXd m, std::string msg = "") {printMatrix326,9337
-Vector3d transform(Vector3d v, Matrix<double, 4, 4> tfm) {transform340,9630
-PAT* get_closest_PAT_thru_ray(vector<PAT>& pats, Vector3d A, Vector3d B, double *t_save=nullptr) {get_closest_PAT_thru_ray349,9825
-Vector3d getCameraLook(const Camera& camera) {getCameraLook423,12263
-Vector3d getCameraPosition(const Camera& camera) {getCameraPosition431,12540
-Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {transformNormal435,12640
-void Assignment::drawIntersectTest(Camera *camera) {drawIntersectTest445,12906
+  PAT(const Primitive& _prm, const Matrix<double, 4, 4> _tfm)PAT110,2648
+void draw_sphere(double x, double y, double z, const float color[3]) {draw_sphere115,2812
+void draw_blue_sphere(double x, double y, double z) {draw_blue_sphere129,3342
+void draw_red_sphere(double x, double y, double z) {draw_red_sphere135,3537
+std::unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {buildPATs141,3722
+std::unique_ptr<vector<PAT>> getpats() {getpats179,4840
+Matrix<double, 4, 4> getprmtfmmat(const Primitive& prm) {getprmtfmmat190,5130
+void Assignment::drawIOTest() {drawIOTest196,5303
+double tminus(double a, double b, double c) {tminus237,6574
+double tplus(double a, double b, double c) {tplus246,6783
+Vector3d grad_sq_io(double x, double y, double z, double e, double n) {grad_sq_io255,7040
+struct MissOrHit {MissOrHit266,7409
+  bool hit;hit267,7428
+  double t;t268,7440
+  MissOrHit(bool _hit, double _t) : hit{_hit}, t{_t} {}MissOrHit269,7452
+  explicit MissOrHit(bool _hit) : hit{false}, t{0} {MissOrHit270,7508
+  explicit MissOrHit(double _t) : hit{true}, t{_t} {}MissOrHit273,7592
+MissOrHit findIntersection(double e, double n,findIntersection276,7650
+void printMatrix(MatrixXd m, std::string msg = "") {printMatrix321,9041
+Vector3d transform(Vector3d v, Matrix<double, 4, 4> tfm) {transform335,9334
+PAT* get_closest_PAT_thru_ray(vector<PAT>& pats, Vector3d A, Vector3d B, double *t_save=nullptr) {get_closest_PAT_thru_ray344,9529
+Vector3d getCameraLook(const Camera& camera) {getCameraLook418,11967
+Vector3d getCameraPosition(const Camera& camera) {getCameraPosition426,12244
+Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {transformNormal430,12344
+void Assignment::drawIntersectTest(Camera *camera) {drawIntersectTest440,12610
 
 Assignment.hpp,78
 #define ASSIGNMENT_HPPASSIGNMENT_HPP2,23
