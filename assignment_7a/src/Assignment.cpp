@@ -155,17 +155,18 @@ std::unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {
     }
   case OBJ:
     {
-    auto obj = dynamic_cast<const Object&>(root);
-    auto overall_tfm = tfmvec2mat(obj.getOverallTransformation());
-    for (const auto& item : obj.getChildren()) {
-      auto child = item.second;
-      auto child_tfm = tfmvec2mat(child.transformations);
-      auto child_made_pat_vec = buildPATs(*Renderable::get(child.name), level + 1);
-      for (auto& child_made_pat : *child_made_pat_vec) {
-        v->emplace_back(child_made_pat.prm,
-                        overall_tfm * child_tfm * child_made_pat.tfm);
+      auto obj = dynamic_cast<const Object&>(root);
+      auto overall_tfm = tfmvec2mat(obj.getOverallTransformation());
+      for (const auto& item : obj.getChildren()) {
+        auto child = item.second;
+        auto child_tfm = tfmvec2mat(child.transformations);
+        auto child_made_pat_vec = buildPATs(*Renderable::get(child.name),
+                                            level + 1);
+        for (auto& child_made_pat : *child_made_pat_vec) {
+          v->emplace_back(child_made_pat.prm,
+                          overall_tfm * child_tfm * child_made_pat.tfm);
+        }
       }
-    }
     }
     break;
   case MSH:
@@ -341,7 +342,10 @@ Vector3d transform(Vector3d v, Matrix<double, 4, 4> tfm) {
 
 
 
-PAT* get_closest_PAT_thru_ray(vector<PAT>& pats, Vector3d A, Vector3d B, double *t_save=nullptr) {
+PAT* get_closest_PAT_thru_ray(vector<PAT>& pats,
+                              Vector3d A,
+                              Vector3d B,
+                              double *t_save = nullptr) {
   // Iterating throught the pats, we will find the closest intersection
   double lowest_t = std::numeric_limits<double>::infinity();
   PAT* closest_pat = nullptr;
@@ -436,6 +440,20 @@ Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {
   return tfm3x3.inverse().transpose() * v;
 }
 
+void drawProminentLineSegment(Vector3d start_line, Vector3d end_line) {
+  draw_red_sphere(start_line(0), start_line(1),
+                  start_line(2));
+  // Draw blue sphere at end of normal line
+  draw_blue_sphere(end_line(0), end_line(1), end_line(2));
+  // Draw purple line from intersection point along normal
+  const float purple[3] {1.0, 0.0, 1.0};
+  glMaterialfv(GL_FRONT, GL_AMBIENT, purple);
+  glBegin(GL_LINES);
+  glVertex3f(start_line(0), start_line(1),
+             start_line(2));
+  glVertex3f(end_line(0), end_line(1), end_line(2));
+  glEnd();
+}
 
 void Assignment::drawIntersectTest(Camera *camera) {
   // Camera position, world space
@@ -451,7 +469,10 @@ void Assignment::drawIntersectTest(Camera *camera) {
 
   // Build vector of PATs by traversing tree
   auto pats = getpats();
-  closest_pat = get_closest_PAT_thru_ray(*pats, camera_look, camera_position, &lowest_distance);
+  closest_pat = get_closest_PAT_thru_ray(*pats,
+                                         camera_look,
+                                         camera_position,
+                                         &lowest_distance);
 
   // Done finding closest intersection (if there is one)
   if (closest_pat != nullptr) {
@@ -476,29 +497,16 @@ void Assignment::drawIntersectTest(Camera *camera) {
       + camera_look_transformed * lowest_distance;
 
     auto scaled = transform(intersection_transformed, getprmtfmmat(pat.prm));
-    Vector3d normal_transformed = pat.prm.getNormal(scaled.cast<float>()).cast<double>();
+    Vector3d normal_transformed = pat.prm.getNormal(
+                                    scaled.cast<float>()).cast<double>();
     Vector3d normal_world = transformNormal(normal_transformed,
                                             pat_transform_and_scale_matrix);
     normal_world /= normal_world.norm();
 
-    // Get intersection point:
     Vector3d intersection_point = transform(intersection_transformed,
                                             pat_transform_and_scale_matrix);
     auto end_line = intersection_point + normal_world;
 
-    //// Draw line from intersection point along the surface normal
-    // Draw red sphere at intersection
-    draw_red_sphere(intersection_point(0), intersection_point(1),
-                    intersection_point(2));
-    // Draw blue sphere at end of normal line
-    draw_blue_sphere(end_line(0), end_line(1), end_line(2));
-    // Draw purple line from intersection point along normal
-    const float purple[3] {1.0, 0.0, 1.0};
-    glMaterialfv(GL_FRONT, GL_AMBIENT, purple);
-    glBegin(GL_LINES);
-    glVertex3f(intersection_point(0), intersection_point(1),
-               intersection_point(2));
-    glVertex3f(end_line(0), end_line(1), end_line(2));
-    glEnd();
+    drawProminentLineSegment(intersection_point, end_line);
   }
 }
