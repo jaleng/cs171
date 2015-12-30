@@ -194,6 +194,13 @@ Matrix<double, 4, 4> getprmtfmmat(const Primitive& prm) {
   return tfm2mat(t);
 }
 
+Vector3d transform(Vector3d v, Matrix<double, 4, 4> tfm) {
+  Vector4d v4;
+  v4 << v(0), v(1), v(2), 1;
+  auto tmp = tfm * v4;
+  return Vector3d(tmp(0)/tmp(3), tmp(1)/tmp(3), tmp(2)/tmp(3));
+}
+
 void Assignment::drawIOTest() {
   // Build vector of PATs by traversing tree
   auto pats = getpats();
@@ -209,15 +216,15 @@ void Assignment::drawIOTest() {
         auto inside =  false;
         for (const auto& pat : *pats) {
           // get x,y,z by transforming i/2,j/2,k/2
-          Matrix<double, 4, 1> pretfm;
-          pretfm << di /2.0, dj / 2.0, dk/2.0, 1;
-          auto posttfm = (pat.tfm * getprmtfmmat(pat.prm)).inverse() * pretfm;
-          auto w = posttfm(3);
-          auto x = posttfm(0) / w;
-          auto y = posttfm(1) / w;
-          auto z = posttfm(2) / w;
+          Matrix4d pat_transform_and_scale_matrix =
+            pat.tfm * getprmtfmmat(pat.prm);
+          Vector3d position = transform(
+                                Vector3d(di /2.0, dj / 2.0, dk/2.0),
+                                pat_transform_and_scale_matrix.inverse());
 
-          if (sq_io(x, y, z, pat.prm.getExp0(), pat.prm.getExp1()) <= 0) {
+          if (sq_io(position(0), position(1), position(2),
+                    pat.prm.getExp0(), pat.prm.getExp1())
+              <= 0) {
             inside = true;
             break;
           }
@@ -239,7 +246,6 @@ double tminus(double a, double b, double c) {
   auto disc = b*b - 4*a*c;
   return (-b - sqrt(disc)) / (2*a);
 }
-
 
 /** Finds initial guess t+ for intersection finding algorithm
  *  Assumes discriminant > 0
@@ -331,16 +337,6 @@ void printMatrix(MatrixXd m, std::string msg = "") {
     std::cout << "\n";
   }
 }
-
-
-Vector3d transform(Vector3d v, Matrix<double, 4, 4> tfm) {
-  Vector4d v4;
-  v4 << v(0), v(1), v(2), 1;
-  auto tmp = tfm * v4;
-  return Vector3d(tmp(0)/tmp(3), tmp(1)/tmp(3), tmp(2)/tmp(3));
-}
-
-
 
 PAT* get_closest_PAT_thru_ray(vector<PAT>& pats,
                               Vector3d A,

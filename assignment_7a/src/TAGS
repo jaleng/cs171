@@ -14,25 +14,25 @@ void draw_red_sphere(double x, double y, double z) {draw_red_sphere135,3537
 std::unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {buildPATs141,3722
 std::unique_ptr<vector<PAT>> getpats() {getpats180,4906
 Matrix<double, 4, 4> getprmtfmmat(const Primitive& prm) {getprmtfmmat191,5196
-void Assignment::drawIOTest() {drawIOTest197,5369
-double tminus(double a, double b, double c) {tminus238,6640
-double tplus(double a, double b, double c) {tplus247,6849
-Vector3d grad_sq_io(double x, double y, double z, double e, double n) {grad_sq_io256,7106
-struct MissOrHit {MissOrHit267,7475
-  bool hit;hit268,7494
-  double t;t269,7506
-  MissOrHit(bool _hit, double _t) : hit{_hit}, t{_t} {}MissOrHit270,7518
-  explicit MissOrHit(bool _hit) : hit{false}, t{0} {MissOrHit271,7574
-  explicit MissOrHit(double _t) : hit{true}, t{_t} {}MissOrHit274,7658
-MissOrHit findIntersection(double e, double n,findIntersection277,7716
-void printMatrix(MatrixXd m, std::string msg = "") {printMatrix322,9107
-Vector3d transform(Vector3d v, Matrix<double, 4, 4> tfm) {transform336,9400
-PAT* get_closest_PAT_thru_ray(vector<PAT>& pats,get_closest_PAT_thru_ray345,9595
-Vector3d getCameraLook(const Camera& camera) {getCameraLook422,12125
-Vector3d getCameraPosition(const Camera& camera) {getCameraPosition430,12402
-Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {transformNormal434,12502
-void drawProminentLineSegment(Vector3d start_line, Vector3d end_line) {drawProminentLineSegment443,12767
-void Assignment::drawIntersectTest(Camera *camera) {drawIntersectTest458,13330
+Vector3d transform(Vector3d v, Matrix<double, 4, 4> tfm) {transform197,5369
+void Assignment::drawIOTest() {drawIOTest204,5562
+double tminus(double a, double b, double c) {tminus245,6875
+double tplus(double a, double b, double c) {tplus253,7083
+Vector3d grad_sq_io(double x, double y, double z, double e, double n) {grad_sq_io262,7340
+struct MissOrHit {MissOrHit273,7709
+  bool hit;hit274,7728
+  double t;t275,7740
+  MissOrHit(bool _hit, double _t) : hit{_hit}, t{_t} {}MissOrHit276,7752
+  explicit MissOrHit(bool _hit) : hit{false}, t{0} {MissOrHit277,7808
+  explicit MissOrHit(double _t) : hit{true}, t{_t} {}MissOrHit280,7892
+MissOrHit findIntersection(double e, double n,findIntersection283,7950
+void printMatrix(MatrixXd m, std::string msg = "") {printMatrix328,9341
+PAT* get_closest_PAT_thru_ray(vector<PAT>& pats,get_closest_PAT_thru_ray341,9633
+Vector3d getCameraLook(const Camera& camera) {getCameraLook418,12163
+Vector3d getCameraPosition(const Camera& camera) {getCameraPosition426,12440
+Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {transformNormal430,12540
+void drawProminentLineSegment(Vector3d start_line, Vector3d end_line) {drawProminentLineSegment439,12805
+void Assignment::drawIntersectTest(Camera *camera) {drawIntersectTest454,13368
 
 Assignment.hpp,78
 #define ASSIGNMENT_HPPASSIGNMENT_HPP2,23
