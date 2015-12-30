@@ -12,6 +12,7 @@ SOURCES = main.cpp model.o commands.o command_line.o Renderer.o Scene.o UI.o Uti
 EXENAME = modeler
 
 all: $(EXENAME)
+	ctags -Re *
 
 $(EXENAME): $(SOURCES)
 	$(CC) $(FLAGS) -o $(EXENAME) $(INCLUDE) $(LDFLAGS) $(SOURCES) $(LDLIBS)
