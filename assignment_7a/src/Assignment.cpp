@@ -456,39 +456,31 @@ void drawProminentLineSegment(Vector3d start_line, Vector3d end_line) {
 }
 
 void Assignment::drawIntersectTest(Camera *camera) {
-  // Camera position, world space
-
   auto camera_look = getCameraLook(*camera);
   auto camera_position = getCameraPosition(*camera);
 
-  // Camera direction, world space
-
+  // Build vector of PATs by traversing tree
+  auto pats = getpats();
   // Iterating throught the pats, we will find the closest intersection
   double lowest_distance = std::numeric_limits<double>::infinity();
   PAT* closest_pat = nullptr;
-
-  // Build vector of PATs by traversing tree
-  auto pats = getpats();
   closest_pat = get_closest_PAT_thru_ray(*pats,
                                          camera_look,
                                          camera_position,
                                          &lowest_distance);
 
-  // Done finding closest intersection (if there is one)
+  // If there is a closest intersection, draw the normal of the surface
+  // at the intersection.
   if (closest_pat != nullptr) {
-    // Get the normal, apply inverse transform (normal form), then draw line
-
+    // Get the intersection and normal, apply inverse transforms, then draw line
     auto pat = *closest_pat;
     Matrix4d pat_transform_and_scale_matrix = pat.tfm * getprmtfmmat(pat.prm);
-
     Vector3d camera_position_plus_look_transformed =
       transform(camera_position + camera_look,
                 pat_transform_and_scale_matrix.inverse());
-
     Vector3d camera_position_transformed =
       transform(camera_position,
                 pat_transform_and_scale_matrix.inverse());
-
     Vector3d camera_look_transformed = camera_position_plus_look_transformed
                   - camera_position_transformed;
 
