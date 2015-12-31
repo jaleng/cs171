@@ -39,7 +39,7 @@ Scene *Scene::getSingleton() {
 void Scene::createLights() {
     float position[4] = {3.0, 4.0, 5.0, 1.0};
     float color[3] = {1.0, 1.0, 1.0};
-    float k = 0.2;
+    float k = 0.01;
 
     // Set up a single light
     this->lights.emplace_back(position, color, k);
