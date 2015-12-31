@@ -108,12 +108,9 @@ double sq_io(double x, double y, double z, double e, double n) {
 struct PAT {
   Primitive prm;
   Matrix<double, 4, 4> tfm;
-  Matrix<double, 4, 4> twot;
-  PAT(const Primitive& _prm, const Matrix<double, 4, 4> _tfm,
-      const Matrix<double, 4, 4> _twot)
-    : prm{_prm}, tfm{_tfm}, twot{_twot}{}
+  PAT(const Primitive& _prm, const Matrix<double, 4, 4> _tfm)
+    : prm{_prm}, tfm{_tfm} {}
 };
-
 
 /** Draw a sphere at (x,y,z) of a given color with small jitter **/
 void draw_sphere(double x, double y, double z, const float color[3]) {
@@ -143,8 +140,7 @@ void draw_red_sphere(double x, double y, double z) {
 
 
 /** Build vector of PATs by traversing tree **/
-unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {
-  //cout << "JG: Enter buildPATs\n";
+std::unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {
   auto v = std::make_unique<vector<PAT>>();
   constexpr int max_depth = 20;
   if (level > max_depth) {
@@ -156,25 +152,23 @@ unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {
     {
     Matrix<double, 4, 4> m;
     m.setIdentity();
-    v->emplace_back(dynamic_cast<const Primitive&>(root), m, m);
+    v->emplace_back(dynamic_cast<const Primitive&>(root), m);
     break;
     }
   case OBJ:
     {
-    auto obj = dynamic_cast<const Object&>(root);
-    auto overall_tfm = tfmvec2mat(obj.getOverallTransformation());
-    auto overall_twot = tfmvec2mat_wo_tl(obj.getOverallTransformation());
-    for (const auto& item : obj.getChildren()) {
-      auto child = item.second;
-      auto child_tfm = tfmvec2mat(child.transformations);
-      auto child_twot = tfmvec2mat_wo_tl(child.transformations);
-      auto child_made_pat_vec = buildPATs(*Renderable::get(child.name), level + 1);
-      for (auto& child_made_pat : *child_made_pat_vec) {
-        v->emplace_back(child_made_pat.prm,
-                        overall_tfm * child_tfm * child_made_pat.tfm,
-                        overall_twot * child_twot * child_made_pat.twot);
+      auto obj = dynamic_cast<const Object&>(root);
+      auto overall_tfm = tfmvec2mat(obj.getOverallTransformation());
+      for (const auto& item : obj.getChildren()) {
+        auto child = item.second;
+        auto child_tfm = tfmvec2mat(child.transformations);
+        auto child_made_pat_vec = buildPATs(*Renderable::get(child.name),
+                                            level + 1);
+        for (auto& child_made_pat : *child_made_pat_vec) {
+          v->emplace_back(child_made_pat.prm,
+                          overall_tfm * child_tfm * child_made_pat.tfm);
+        }
       }
-    }
     }
     break;
   case MSH:
@@ -182,7 +176,6 @@ unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {
     assert(false);
     break;
   }
-  //cout << "JG: Exit buildPATs\n";
   return std::move(v);
 }
 
@@ -209,25 +202,23 @@ Vector3d transform(Vector3d v, Matrix<double, 4, 4> tfm) {
   return Vector3d(tmp(0)/tmp(3), tmp(1)/tmp(3), tmp(2)/tmp(3));
 }
 
+/** Apply transformation to normal vector **/
 Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {
-  Vector4d v4;
-  v4 << v(0), v(1), v(2), 0;
-  auto tmp = tfm.inverse().transpose() * v4;
-  return Vector3d(tmp(0), tmp(1), tmp(2));
+  Matrix<double, 3, 3> tfm3x3;
+  tfm3x3 <<
+    tfm(0, 0), tfm(0, 1), tfm(0, 2),
+    tfm(1, 0), tfm(1, 1), tfm(1, 2),
+    tfm(2, 0), tfm(2, 1), tfm(2, 2);
+  return tfm3x3.inverse().transpose() * v;
 }
 
-Vector3d getB(const Camera& camera) {
-  return camera.getPosition().cast<double>();
-}
-
-Vector3d getA(const Camera& camera, int i, int j) {
+Vector3d getDirection(const Camera& camera, int i, int j) {
   // Get width and height of screen plane
   auto height = 2 * camera.getNear()
-                  * tan(static_cast<double>(camera.getFov()) * M_PI / 180.0 / 2.0);
+         * tan(static_cast<double>(camera.getFov()) * M_PI / 180.0 / 2.0);
   auto width = static_cast<double>(camera.getAspect()) * height;
 
   //// Get camera basis vectors
-  // Get camera rotation
   auto axis = camera.getAxis();
   auto angle = camera.getAngle();
   auto rot_mat = tfm2mat(Transformation(
@@ -235,11 +226,14 @@ Vector3d getA(const Camera& camera, int i, int j) {
   auto look  = transform(Vector3d(0, 0, -1), rot_mat);
   auto right = transform(Vector3d(1, 0, 0), rot_mat);
   auto up    = transform(Vector3d(0, 1, 0), rot_mat);
-
   auto x_i = [width](int i) {return (i - XRES/2.0) * width / XRES;};
   auto y_j = [height](int j) {return (j - YRES/2.0) * height / YRES;};
+  return (look * camera.getNear()) + (right * x_i(i)) + (up * y_j(j));
+}
 
-  return  (look * camera.getNear()) + (right * x_i(i)) + (up * y_j(j));
+/** Get camera position double vector **/
+Vector3d getCameraPosition(const Camera& camera) {
+  return camera.getPosition().cast<double>();
 }
 
 Matrix<double, 4, 4> getprmtfmmat(const Primitive& prm) {
@@ -338,6 +332,9 @@ MissOrHit findIntersection(double e, double n,
 PAT* get_closest_PAT_thru_ray(vector<PAT>& pats, Vector3d A, Vector3d B, double *t_save);
 
 bool isShaded(const PointLight& light, Vector3d lit_pos, const Primitive& prm, vector<PAT> pats) {
+  // DEBUG
+  return false;
+  // ENDEBUG
   Vector3d light_position(light.position[0]/light.position[3],
                           light.position[1]/light.position[3],
                           light.position[2]/light.position[3]);
@@ -348,56 +345,6 @@ bool isShaded(const PointLight& light, Vector3d lit_pos, const Primitive& prm, v
     return false;
   }
   return true;
-}
-
-Vector3d lighting(Vector3d lit_pos, Vector3d normal,
-                  const Primitive& prm, vector<PAT> pats, const vector<PointLight>& lights,
-                  Vector3d cam_pos)  {
-  using std::max;
-
-  auto rgb = prm.getColor();
-  Vector3d color(rgb.r, rgb.g, rgb.b);
-  auto diffuse = color * prm.getDiffuse();
-  auto ambient = color * prm.getAmbient();
-  auto specular = color * prm.getSpecular();
-  auto shininess = static_cast<double>(prm.getGloss());
-
-  Vector3d diffuse_sum(0, 0, 0);
-  Vector3d specular_sum(0, 0, 0);
-
-  auto cam_direction = (cam_pos - lit_pos).normalized();
-
-  // Get the contribution from each light
-  for (const auto& light : lights) {
-    if (isShaded(light, lit_pos, prm, pats)) {
-      continue;
-    }
-    Vector3d light_color(light.color[0], light.color[1], light.color[2]);
-    // Attentuate the light_color
-    auto distance = static_cast<double>((lit_pos - cam_pos).norm());
-    light_color *= (1.0 / (1 + (light.k * distance * distance)));
-
-    Vector3d light_position(light.position[0]/light.position[3],
-                            light.position[1]/light.position[3],
-                            light.position[2]/light.position[3]);
-    auto light_direction = (light_position - lit_pos).normalized();
-
-    // Get diffuse light
-    double dot_product = normal.dot(light_direction);
-    auto light_diffuse = light_color * max(0.0, dot_product);
-    diffuse_sum += light_diffuse;
-
-    // Get specular light
-    dot_product = normal.dot((cam_direction + light_direction).normalized());
-    auto light_specular = light_color *
-                          pow(max(0.0, dot_product), shininess);
-    specular_sum += light_specular;
-  }
-
-  // Add ambient, diffuse, specular light; clip as necessary.
-  return Vector3d::Ones().cwiseMin(ambient
-                                   + diffuse_sum.cwiseProduct(diffuse)
-                                   + specular_sum.cwiseProduct(specular));
 }
 
 /** For DEBUG, prints out a matrix row-by-row **/
@@ -412,6 +359,65 @@ void printMatrix(MatrixXd m, std::string msg = "") {
     }
     std::cout << "\n";
   }
+}
+
+Vector3d lighting(Vector3d lit_pos, Vector3d normal,
+                  const Primitive& prm, vector<PAT> pats, const vector<PointLight>& lights,
+                  Vector3d cam_pos)  {
+  using std::max;
+
+  auto rgb = prm.getColor();
+  Vector3d color(rgb.r, rgb.g, rgb.b);
+  Vector3d diffuse = color * prm.getDiffuse();
+  Vector3d ambient = color * prm.getAmbient();
+  Vector3d specular = color * prm.getSpecular();
+  double shininess = static_cast<double>(prm.getGloss());
+
+  Vector3d diffuse_sum(0, 0, 0);
+  Vector3d specular_sum(0, 0, 0);
+
+  auto cam_direction = (cam_pos - lit_pos).normalized();
+
+  // Get the contribution from each light
+  for (const auto& light : lights) {
+    if (isShaded(light, lit_pos, prm, pats)) {
+      continue;
+    }
+    Vector3d light_color(light.color[0], light.color[1], light.color[2]);
+    // Attentuate the light_color
+    // DEBUG - Turned off attenuation
+    //auto distance = static_cast<double>((lit_pos - cam_pos).norm());
+    //light_color *= (1.0 / (1 + (light.k * distance * distance)));
+
+    Vector3d light_position(light.position[0]/light.position[3],
+                            light.position[1]/light.position[3],
+                            light.position[2]/light.position[3]);
+    auto light_direction = (light_position - lit_pos).normalized();
+
+    // Get diffuse light
+    double dot_product = normal.dot(light_direction);
+    //std::cout << "dot_product: " << dot_product << "\n";
+    auto light_diffuse = light_color * max(0.0, dot_product);
+    diffuse_sum += light_diffuse;
+
+    // Get specular light
+    dot_product = normal.dot((cam_direction + light_direction).normalized());
+    auto light_specular = light_color *
+                          pow(max(0.0, dot_product), shininess);
+    specular_sum += light_specular;
+  }
+
+  // Add ambient, diffuse, specular light; clip as necessary.
+  auto total_color = Vector3d::Ones().cwiseMin(ambient
+                                   + diffuse_sum.cwiseProduct(diffuse)
+                                   + specular_sum.cwiseProduct(specular));
+  // DEBUG
+  //printMatrix(ambient, "ambient:\n");
+  //printMatrix(diffuse_sum, "diffuse_sum:\n");
+  //printMatrix(specular_sum, "specular_sum:\n");
+  //printMatrix(total_color, "total_color:\n");
+  // ENDEBUG
+  return total_color;
 }
 
 PAT* get_closest_PAT_thru_ray(vector<PAT>& pats, Vector3d A, Vector3d B, double *t_save=nullptr) {
@@ -498,66 +504,54 @@ void Assignment::raytrace(Camera camera, Scene scene) {
   //cout << "JG: Before call to getPATs\n";
   auto pats = getPATs(scene);
   //cout << "JG: After call to getPATs\n";
-  auto B = getB(camera);
+  auto camera_position = getCameraPosition(camera);
 
   for (int i = 0; i < XRES; i++) {
     for (int j = 0; j < YRES; j++) {
-      auto A = getA(camera, i, j);
-      double lowest_t;
-      auto closest_pat = get_closest_PAT_thru_ray(*pats, A, B, &lowest_t);
+      auto direction = getDirection(camera, i, j);
+      double lowest_distance;
+      auto closest_pat = get_closest_PAT_thru_ray(*pats,
+                                                  direction,
+                                                  camera_position,
+                                                  &lowest_distance);
 
       if (closest_pat != nullptr) {
+        // Get the intersection and normal, apply inverse transforms, then draw line
         auto pat = *closest_pat;
-        // Get the normal, apply inverse transform (normal form), then draw line
-        auto B_transformed = transform(B, (pat.tfm
-                                           * getprmtfmmat(pat.prm)).inverse());
-        auto BplusA_transformed =
-          transform(B+A, (pat.tfm * getprmtfmmat(pat.prm)).inverse());
-        auto A_transformed = BplusA_transformed - B_transformed;
+        Matrix4d pat_transform_and_scale_matrix = pat.tfm * getprmtfmmat(pat.prm);
+        Vector3d camera_position_plus_look_transformed =
+          transform(camera_position + direction,
+                    pat_transform_and_scale_matrix.inverse());
+        Vector3d camera_position_transformed =
+          transform(camera_position,
+                    pat_transform_and_scale_matrix.inverse());
+        Vector3d camera_look_transformed = camera_position_plus_look_transformed
+          - camera_position_transformed;
 
-        Vector3d v = A_transformed * lowest_t + B_transformed;
+        auto intersection_transformed =
+          camera_position_transformed
+          + camera_look_transformed * lowest_distance;
 
-        auto scaled = transform(v, getprmtfmmat(pat.prm));
-        auto normal_transformed = closest_pat->prm.getNormal(scaled.cast<float>()).cast<double>();
-        auto normal_wc =
-          transformNormal(normal_transformed,
-                          closest_pat->twot * getprmtfmmat(pat.prm));
-        normal_wc /= normal_wc.norm();
-        // Get intersection point:
-        auto intersection_wc =
-          transform(v, closest_pat->tfm * getprmtfmmat(pat.prm));
+        auto scaled = transform(intersection_transformed, getprmtfmmat(pat.prm));
+        Vector3d normal_transformed = pat.prm.getNormal(
+                                                        scaled.cast<float>()).cast<double>();
+        Vector3d normal_world = transformNormal(normal_transformed,
+                                                pat_transform_and_scale_matrix);
+        normal_world.normalize();
 
-        //printMatrix(intersection_wc, "JG: intersection_wc:\n");
-        //printMatrix(normal_wc, "JG: normal_wc:\n");
+        // DEBUG
+        //printMatrix(normal_world, "Normal:\n");
+        // ENDEBUG
+        Vector3d intersection_point = transform(intersection_transformed,
+                                                pat_transform_and_scale_matrix);
 
-        auto color = lighting(intersection_wc,
-                              normal_wc,
+        auto color = lighting(intersection_point,
+                              normal_world,
                               pat.prm,
                               *pats,
                               scene.lights,
-                              B);
+                              camera_position);
         png.setPixel(i, j, color(0), color(1), color(2));
-        //printMatrix(color, "JG: color: \n");
-
-        // DEBUG
-        //// Draw line from intersection point along the surface normal
-        // Draw red sphere at intersection
-        auto end_line = intersection_wc + normal_wc;
-        draw_red_sphere(intersection_wc(0), intersection_wc(1),
-                        intersection_wc(2));
-        // Draw blue sphere at end of normal line
-        draw_blue_sphere(end_line(0), end_line(1), end_line(2));
-        // Draw purple line from intersection point along normal
-        const float purple[3] {1.0, 0.0, 1.0};
-        glMaterialfv(GL_FRONT, GL_AMBIENT, purple);
-        glBegin(GL_LINES);
-        glVertex3f(intersection_wc(0), intersection_wc(1),
-                   intersection_wc(2));
-        glVertex3f(end_line(0), end_line(1), end_line(2));
-        glEnd();
-
-
-        // ENDEBUG
       } else {
         png.setPixel(i, j, 0, 0, 0);
       }
