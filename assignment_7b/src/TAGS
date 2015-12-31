@@ -1,0 +1,498 @@
+
+Assignment.cpp,2462
+#define XRES XRES13,181
+#define YRES YRES14,198
+Matrix<double, 4, 4> tfm2mat(const Transformation& tfm) {tfm2mat18,299
+Matrix<double, 4, 4> tfmvec2mat(const vector<Transformation>& tfmvec) {tfmvec2mat69,1505
+Matrix<double, 4, 4> tfmvec2mat_wo_tl(const vector<Transformation>& tfmvec) {tfmvec2mat_wo_tl82,1875
+double sq_io(double x, double y, double z, double e, double n) {sq_io99,2300
+struct PAT {PAT108,2601
+  Primitive prm;prm109,2614
+  Matrix<double, 4, 4> tfm;tfm110,2631
+  PAT(const Primitive& _prm, const Matrix<double, 4, 4> _tfm)PAT111,2659
+void draw_sphere(double x, double y, double z, const float color[3]) {draw_sphere116,2823
+void draw_blue_sphere(double x, double y, double z) {draw_blue_sphere130,3353
+void draw_red_sphere(double x, double y, double z) {draw_red_sphere136,3548
+std::unique_ptr<vector<PAT>> buildPATs(const Renderable& root, int level = 0) {buildPATs143,3734
+unique_ptr<vector<PAT>> getPATs(const Scene& scene) {getPATs182,4918
+Vector3d transform(Vector3d v, Matrix<double, 4, 4> tfm) {transform198,5368
+Vector3d transformNormal(Vector3d v, Matrix<double, 4, 4> tfm) {transformNormal206,5607
+Vector3d getDirection(const Camera& camera, int i, int j) {getDirection215,5872
+Vector3d getCameraPosition(const Camera& camera) {getCameraPosition235,6781
+Matrix<double, 4, 4> getprmtfmmat(const Primitive& prm) {getprmtfmmat239,6881
+double tminus(double a, double b, double c) {tminus248,7150
+double tplus(double a, double b, double c) {tplus257,7359
+Vector3d grad_sq_io(double x, double y, double z, double e, double n) {grad_sq_io266,7616
+struct MissOrHit {MissOrHit277,7985
+  bool hit;hit278,8004
+  double t;t279,8016
+  MissOrHit(bool _hit, double _t) : hit{_hit}, t{_t} {}MissOrHit280,8028
+  explicit MissOrHit(bool _hit) : hit{false}, t{0} {MissOrHit281,8084
+  explicit MissOrHit(double _t) : hit{true}, t{_t} {}MissOrHit284,8168
+MissOrHit findIntersection(double e, double n,findIntersection287,8226
+void printMatrix(MatrixXd m, std::string msg = "") {printMatrix335,9755
+bool isShaded(const PointLight& light, Vector3d lit_pos, const Primitive& prm, vector<PAT> pats) {isShaded348,10047
+Vector3d lighting(Vector3d lit_pos, Vector3d normal,lighting379,11022
+PAT* get_closest_PAT_thru_ray(vector<PAT>& pats, Vector3d A, Vector3d B, double *t_save=nullptr,get_closest_PAT_thru_ray444,13480
+void Assignment::raytrace(Camera camera, Scene scene) {raytrace523,16083
+
+Assignment.hpp,80
+#define ASSIGNMENT_HPPASSIGNMENT_HPP2,23
+class Assignment {Assignment13,141
+
+Makefile,467
+CC = g++CC6,209
+FLAGS = -Wall -g -std=c++14FLAGS7,218
+LDFLAGS = -L/usr/X11R6/lib -L/usr/local/libLDFLAGS8,246
+LDLIBS = -lGLEW -lGL -lGLU -lglut -lpng -lpthreadLDLIBS9,290
+INCLUDE = -I../lib -I/usr/include -I/usr/X11R6/include -I/usr/include/GL -I/usr/include/libpng -I../..INCLUDE10,340
+SOURCES = main.cpp model.o commands.o command_line.o Renderer.o Scene.o UI.o Utilities.o Shader.o Assignment.o PNGMaker.oSOURCES11,443
+EXENAME = modelerEXENAME12,565
+
+PNGMaker.cpp,267
+#define MAX_INTENSITY MAX_INTENSITY3,25
+PNGMaker::PNGMaker(int xres, int yres) {PNGMaker6,137
+PNGMaker::~PNGMaker() {~PNGMaker13,332
+void PNGMaker::setPixel(int x, int y, float r, float g, float b) {setPixel18,441
+int PNGMaker::saveImage() {saveImage26,685
+
+PNGMaker.hpp,124
+class PNGMaker {PNGMaker5,44
+        int xres;xres7,73
+        int yres;yres8,91
+        Vec3f *screen;screen17,281
+
+Renderer.cpp,1205
+#define MAX_RECURSION_DEPTH MAX_RECURSION_DEPTH3,25
+Renderer *Renderer::singleton;singleton5,57
+Renderer::Renderer(int xres, int yres) {Renderer11,201
+Renderer *Renderer::getSingleton() {getSingleton18,433
+Renderer *Renderer::getSingleton(int xres, int yres) {getSingleton27,675
+int Renderer::getXRes() {getXRes38,916
+int Renderer::getYRes() {getYRes42,972
+Camera *Renderer::getCamera() {getCamera46,1028
+vector<PointLight> *Renderer::getLights() {getLights50,1093
+void Renderer::updateScene() {updateScene54,1173
+void Renderer::init() {init59,1266
+void Renderer::initLights() {initLights103,3037
+void Renderer::setupLights() {setupLights121,3709
+void Renderer::start() {start128,3995
+void Renderer::checkUIState() {checkUIState140,4438
+void Renderer::draw(Renderable* ren, int depth) {draw162,5225
+void Renderer::drawPrimitive(Primitive *prm) {drawPrimitive181,5826
+void Renderer::drawObject(Object* obj, int depth) {drawObject350,13225
+void Renderer::drawAxes() {drawAxes375,13894
+void Renderer::transform(const Transformation& trans) {transform447,15720
+void Renderer::display() {display485,17002
+void Renderer::reshape(int xres, int yres) {reshape575,20039
+
+Renderer.hpp,365
+#define RENDERER_HPPRENDERER_HPP2,21
+class Renderer {Renderer18,258
+        static Renderer *singleton;singleton20,287
+        GLuint display_list;display_list43,936
+        GLuint vb_array;vb_array44,965
+        GLuint vb_objects[2];vb_objects45,990
+        Scene *scene;scene47,1021
+        Shader *shader;shader48,1043
+        UI *ui;ui49,1067
+
+Scene.cpp,522
+PointLight::PointLight(float *position, float *color, float k) {PointLight8,109
+Scene::Scene() : needs_update(default_needs_update) {Scene18,394
+Scene *Scene::getSingleton() {getSingleton30,821
+void Scene::createLights() {createLights39,994
+void Scene::generateVertex(Primitive *prm, float u, float v) {generateVertex52,1348
+void Scene::tessellatePrimitive(Primitive *prm) {tessellatePrimitive58,1614
+void Scene::tessellateObject(Object *obj) {tessellateObject119,3622
+void Scene::update() {update145,4456
+
+Scene.hpp,705
+#define SCENE_HPPSCENE_HPP2,18
+struct PointLight {PointLight19,276
+    float position[4];position20,296
+    float color[3];color21,319
+    float k; // Attenuation coefficientk22,339
+static const bool default_needs_update = false;default_needs_update56,1123
+class Scene {Scene58,1172
+        static Scene *singleton;singleton60,1198
+        vector<Object *> root_objs;root_objs63,1270
+        unordered_map<Primitive*, unsigned int> prm_tessellation_start;prm_tessellation_start65,1307
+        vector<PointLight> lights;lights67,1421
+        vector<Vector3f> vertices;vertices69,1457
+        vector<Vector3f> normals;normals70,1492
+        bool needs_update;needs_update80,1641
+
+Shader.cpp,493
+#define GL_GLEXT_PROTOTYPES GL_GLEXT_PROTOTYPES3,23
+const char *Shader::vert_prog_file_name = "vertex.glsl";vert_prog_file_name9,104
+const char *Shader::frag_prog_file_name = "fragment.glsl";frag_prog_file_name10,161
+Shader::Shader(float mode) {Shader13,295
+Shader *Shader::getSingleton() {getSingleton18,409
+Shader *Shader::getSingleton(float mode) {getSingleton27,625
+void Shader::compileShaders() {compileShaders39,904
+void Shader::linkf(float f, char *name) {linkf121,3752
+
+Shader.hpp,395
+#define SHADER_HPPSHADER_HPP2,19
+static const float default_mode = 1.0;default_mode16,223
+class Shader {Shader18,263
+        static Shader *singleton;singleton20,290
+        float mode;mode24,413
+        GLenum program;program25,433
+        static const char *vert_prog_file_name;vert_prog_file_name33,581
+        static const char *frag_prog_file_name;frag_prog_file_name34,629
+
+UI.cpp,1051
+UI *UI::singleton = NULL;singleton3,19
+Camera::Camera(float *position, float *axis, float angle, float near, float far,Camera6,85
+Vector3f Camera::getPosition() const {getPosition20,433
+Vector3f Camera::getAxis() const {getAxis24,550
+float Camera::getAngle() const {getAngle28,651
+float Camera::getNear() const {getNear32,711
+float Camera::getFar() const {getFar36,769
+float Camera::getFov() const {getFov40,825
+float Camera::getAspect() const {getAspect44,881
+UI::UI(int xres, int yres) : UI49,1019
+void UI::createCamera() {createCamera70,1652
+UI *UI::getSingleton() {getSingleton84,2056
+UI *UI::getSingleton(int xres, int yres) {getSingleton93,2262
+void UI::handleMouseButton(int button, int state, int x, int y) {handleMouseButton105,2506
+void UI::handleMouseMotion(int x, int y) {handleMouseMotion125,3163
+void UI::handleKeyPress(unsigned char key, int x, int y) {handleKeyPress175,5300
+Vector3f UI::getArcballVector(int x, int y) {getArcballVector226,6719
+void UI::reshape(int xres, int yres) {reshape240,7178
+
+UI.hpp,2346
+#define UI_HPPUI_HPP2,15
+#define _USE_MATH_DEFINES_USE_MATH_DEFINES8,102
+struct Camera {Camera16,199
+    Vec3f position;position18,256
+    Vec3f axis;axis19,276
+    float angle;angle20,292
+    float near;near23,337
+    float far;far24,353
+    float fov;fov25,368
+    float aspect;aspect26,383
+static const int default_xres = 1000;default_xres44,818
+static const int default_yres = 1000;default_yres45,856
+static const float default_shader_mode = 1.0;default_shader_mode48,931
+static const float default_scene_scale = 1.0;default_scene_scale50,999
+static const bool default_rebuild_scene = false;default_rebuild_scene52,1077
+static const bool default_wireframe_mode = false;default_wireframe_mode54,1151
+static const bool default_normal_mode = false;default_normal_mode56,1250
+static const bool default_io_mode = true;default_io_mode58,1328
+static const bool default_intersect_mode = true;default_intersect_mode60,1449
+static const bool default_arcball_scene = true;default_arcball_scene63,1561
+static const bool default_mouse_down = false;default_mouse_down65,1643
+static const Matrix4f default_arcball_rotate_mat = Matrix4f::Identity();default_arcball_rotate_mat68,1740
+static const Matrix4f default_arcball_object_mat = Matrix4f::Identity();default_arcball_object_mat70,1855
+static const Matrix4f default_arcball_light_mat = Matrix4f::Identity();default_arcball_light_mat72,1969
+class UI {UI74,2042
+        static UI *singleton;singleton76,2065
+        int xres;xres84,2383
+        int yres;yres85,2401
+        Camera camera;camera86,2419
+        float shader_mode;shader_mode88,2443
+        float scene_scale;scene_scale89,2470
+        bool rebuild_scene;rebuild_scene90,2497
+        bool raytrace_scene;raytrace_scene91,2525
+        bool wireframe_mode;wireframe_mode92,2554
+        bool normal_mode;normal_mode93,2583
+        bool io_mode;io_mode94,2609
+        bool intersect_mode;intersect_mode95,2631
+        Matrix4f arcball_object_mat;arcball_object_mat97,2661
+        Matrix4f arcball_light_mat;arcball_light_mat98,2698
+        int mouse_x;mouse_x105,2824
+        int mouse_y;mouse_y106,2845
+        bool arcball_scene;arcball_scene108,2867
+        bool mouse_down;mouse_down109,2895
+        Matrix4f arcball_rotate_mat;arcball_rotate_mat111,2921
+
+Utilities.cpp,519
+Vec3i::Vec3i(int i, int j, int k) {Vec3i4,65
+Vec3i::Vec3i(int *t) {Vec3i11,194
+Vec3f::Vec3f(float x, float y, float z) {Vec3f16,286
+Vec3f::Vec3f(float *v) {Vec3f23,420
+Vec4f::Vec4f(float x, float y, float z, float w) {Vec4f28,523
+Vec4f::Vec4f(float *v) {Vec4f36,692
+float degToRad(float angle) {degToRad41,801
+float radToDeg(float angle) {radToDeg46,920
+void makeRotateMat(float *matrix, float x, float y, float z, float angle) {makeRotateMat54,1084
+char *readFile(char *file_name) {readFile83,2041
+
+Utilities.hpp,467
+#define UTILITIES_HPPUTILITIES_HPP2,22
+#define _USE_MATH_DEFINES_USE_MATH_DEFINES8,118
+struct Vec3i {Vec3i14,193
+    float i, j, k;i15,208
+    float i, j, k;j15,208
+    float i, j, k;k15,208
+struct Vec3f {Vec3f22,306
+    float x, y, z;x23,321
+    float x, y, z;y23,321
+    float x, y, z;z23,321
+struct Vec4f {Vec4f30,427
+    float x, y, z, w;x31,442
+    float x, y, z, w;y31,442
+    float x, y, z, w;z31,442
+    float x, y, z, w;w31,442
+
+command_line.cpp,926
+Line::Line(char* argv) : untokenized_argv(), argv(), tokens() {Line5,111
+Line::~Line() {~Line20,498
+const int Line::toCommandID() const {toCommandID24,518
+const Command& Line::toCommand() const {toCommand39,978
+CommandLine* CommandLine::cmd_line = NULL;cmd_line75,2488
+CommandLine::CommandLine() : running(true), state(), history() {CommandLine77,2532
+CommandLine::~CommandLine() {~CommandLine80,2600
+void CommandLine::init() {init84,2634
+void CommandLine::kill() {kill95,2945
+bool CommandLine::active() {active100,3009
+void CommandLine::pause() {pause107,3208
+void CommandLine::run() {run115,3428
+const Line* CommandLine::getState() {getState124,3646
+void CommandLine::clearState() {clearState135,3936
+const vector<const Line*>& CommandLine::getHistory() {getHistory141,4047
+void CommandLine::clearHistory() {clearHistory149,4273
+void CommandLine::readLine(istream& input) {readLine155,4372
+
+command_line.hpp,582
+#define PARSER_HPPPARSER_HPP2,19
+static const char quicksave_dir[] = "data/quicksave.scn";quicksave_dir19,283
+struct Line {Line21,342
+    static const int cmd_line_buffer_len = 256;cmd_line_buffer_len26,418
+    char untokenized_argv[cmd_line_buffer_len];untokenized_argv28,467
+    char argv[cmd_line_buffer_len];argv29,515
+    vector<char*> tokens;tokens30,551
+class CommandLine {CommandLine39,691
+    static CommandLine* cmd_line;cmd_line42,721
+    bool running;running44,756
+    stack<Line*> state;state45,774
+    vector<const Line*> history;history47,799
+
+commands.cpp,2798
+CommandName::CommandName() {CommandName6,135
+CommandName::CommandName(const char* name) : name() {CommandName11,276
+const bool CommandName::operator==(const CommandName& rhs) const {operator ==15,363
+const bool CommandName::operator!=(const CommandName& rhs) const {operator !=18,478
+const bool CommandName::operator==(const char* rhs) const {operator ==21,593
+const bool CommandName::operator!=(const char* rhs) const {operator !=24,696
+Command::Command() {Command30,882
+Command::Command(Command36,1012
+HelpInfo::HelpInfo() {HelpInfo51,1376
+HelpInfo::HelpInfo(CommandName cmd_name, const char* help_text) :HelpInfo57,1509
+bool Commands::help(int argc, char** argv) {help79,1765
+bool Commands::stop(int argc, char** argv) {stop125,3544
+bool Commands::info(int argc, char** argv) {info128,3604
+bool Commands::interact(int argc, char** argv) {interact196,6268
+bool Commands::source(int argc, char** argv) {source201,6386
+bool Commands::save(int argc, char** argv) {save246,7700
+bool Commands::deselect(int argc, char** argv) {deselect267,8244
+bool Commands::getPrimitive(int argc, char** argv) {getPrimitive273,8379
+bool Commands::prmSetCoeff(int argc, char** argv) {prmSetCoeff287,8854
+bool Commands::prmSetExponent(int argc, char** argv) {prmSetExponent316,9937
+bool Commands::prmSetPatch(int argc, char** argv) {prmSetPatch344,10994
+bool Commands::prmSetColor(int argc, char** argv) {prmSetColor376,12230
+bool Commands::prmSetAmbient(int argc, char** argv) {prmSetAmbient407,13401
+bool Commands::prmSetReflected(int argc, char** argv) {prmSetReflected434,14443
+bool Commands::prmSetRefracted(int argc, char** argv) {prmSetRefracted461,15497
+bool Commands::prmSetGloss(int argc, char** argv) {prmSetGloss488,16551
+bool Commands::prmSetDiffuse(int argc, char** argv) {prmSetDiffuse515,17581
+bool Commands::prmSetSpecular(int argc, char** argv) {prmSetSpecular542,18623
+bool Commands::getObject(int argc, char** argv) {getObject570,19681
+bool Commands::objAllTranslate(int argc, char** argv) {objAllTranslate584,20150
+bool Commands::objAllRotate(int argc, char** argv) {objAllRotate609,21078
+bool Commands::objAllScale(int argc, char** argv) {objAllScale635,22063
+bool Commands::objAddObject(int argc, char** argv) {objAddObject660,22983
+bool Commands::objAddPrimitive(int argc, char** argv) {objAddPrimitive698,24562
+bool Commands::objSetCursor(int argc, char** argv) {objSetCursor736,26153
+bool Commands::objCursorTranslate(int argc, char** argv) {objCursorTranslate757,26881
+bool Commands::objCursorRotate(int argc, char** argv) {objCursorRotate782,27811
+bool Commands::objCursorScale(int argc, char** argv) {objCursorScale808,28798
+void Commands::init() {init836,29803
+void Commands::help_init() {help_init840,29847
+
+commands.hpp,3671
+#define COMMANDS_HPPCOMMANDS_HPP2,21
+static const unsigned int cmd_name_buffer_len = 32;cmd_name_buffer_len13,178
+struct CommandName {CommandName14,230
+    char name[cmd_name_buffer_len];name15,251
+struct CommandNameHasher {CommandNameHasher26,599
+    unsigned int operator()(const CommandName& cmd) const {operator ()27,626
+enum CommandType {DEFAULT, STATE};CommandType37,897
+enum CommandType {DEFAULT, STATE};DEFAULT37,897
+enum CommandType {DEFAULT, STATE};STATE37,897
+struct Command {Command39,933
+    CommandType type;type40,950
+    unsigned int min_expected_argc;min_expected_argc42,973
+    unsigned int max_expected_argc;max_expected_argc43,1009
+    bool (*action)(int expected_argc, char** argv);action44,1045
+struct HelpInfo {HelpInfo55,1323
+    static const int help_text_buffer_len = 512;help_text_buffer_len57,1350
+    CommandName cmd_name;cmd_name60,1408
+    char help_text[help_text_buffer_len];help_text61,1434
+namespace Commands {Commands68,1594
+    static const int max_cmd_id = 1000;max_cmd_id71,1730
+    static const int invalid_cmd_id                 = -1;invalid_cmd_id75,1797
+    static const int help_cmd_id                    = 0;help_cmd_id76,1855
+    static const int stop_cmd_id                    = 1;stop_cmd_id77,1912
+    static const int info_cmd_id                    = 2;info_cmd_id78,1969
+    static const int interact_cmd_id                = 3;interact_cmd_id79,2026
+    static const int source_cmd_id                  = 4;source_cmd_id80,2083
+    static const int save_cmd_id                    = 5;save_cmd_id81,2140
+    static const int deselect_cmd_id                = 99;deselect_cmd_id83,2247
+    static const int primitive_get_cmd_id           = 100;primitive_get_cmd_id85,2322
+    static const int primitive_set_coeff_cmd_id     = 101;primitive_set_coeff_cmd_id86,2381
+    static const int primitive_set_exponent_cmd_id  = 102;primitive_set_exponent_cmd_id87,2440
+    static const int primitive_set_patch_cmd_id     = 103;primitive_set_patch_cmd_id88,2499
+    static const int primitive_set_color_cmd_id     = 104;primitive_set_color_cmd_id89,2558
+    static const int primitive_set_ambient_cmd_id   = 105;primitive_set_ambient_cmd_id90,2617
+    static const int primitive_set_reflected_cmd_id = 106;primitive_set_reflected_cmd_id91,2676
+    static const int primitive_set_refracted_cmd_id = 107;primitive_set_refracted_cmd_id92,2735
+    static const int primitive_set_gloss_cmd_id     = 108;primitive_set_gloss_cmd_id93,2794
+    static const int primitive_set_diffuse_cmd_id   = 109;primitive_set_diffuse_cmd_id94,2853
+    static const int primitive_set_specular_cmd_id  = 110;primitive_set_specular_cmd_id95,2912
+    static const int object_get_cmd_id              = 200;object_get_cmd_id97,2985
+    static const int object_all_translate_cmd_id    = 201;object_all_translate_cmd_id98,3044
+    static const int object_all_rotate_cmd_id       = 202;object_all_rotate_cmd_id99,3103
+    static const int object_all_scale_cmd_id        = 203;object_all_scale_cmd_id100,3162
+    static const int object_add_object_cmd_id       = 204;object_add_object_cmd_id101,3221
+    static const int object_add_primitive_cmd_id    = 205;object_add_primitive_cmd_id102,3280
+    static const int object_set_cursor_cmd_id       = 206;object_set_cursor_cmd_id103,3339
+    static const int object_cursor_translate_cmd_id = 207;object_cursor_translate_cmd_id104,3398
+    static const int object_cursor_rotate_cmd_id    = 208;object_cursor_rotate_cmd_id105,3457
+    static const int object_cursor_scale_cmd_id     = 209;object_cursor_scale_cmd_id106,3516
+
+main.cpp,47
+int main(int argc, char *argv[]) {main12,148
+
+model.cpp,4307
+RGBf::RGBf(const float r, const float g, const float b) {RGBf5,104
+Transformation::Transformation(TransformationType type, const Vector4f& trans) :Transformation13,298
+Transformation::Transformation(Transformation18,417
+Name::Name(const char* name) : name() {Name30,688
+const bool Name::operator==(const Name& rhs) const {operator ==34,761
+const bool Name::operator!=(const Name& rhs) const {operator !=42,977
+unordered_map<Name, Renderable*, NameHasher> Renderable::renderables;renderables53,1276
+Renderable::Renderable() {Renderable55,1347
+Renderable::~Renderable() {~Renderable58,1381
+Renderable* Renderable::create(RenderableType type, const Name& name) {create63,1457
+Renderable* Renderable::get(const Name& name) {get92,2438
+bool Renderable::exists(const Name& name) {exists98,2569
+void Renderable::clear() {clear104,2715
+    Renderable::getActiveRenderables()getActiveRenderables108,2821
+Primitive::Primitive() :Primitive115,2971
+Primitive::~Primitive() {~Primitive133,3415
+void Primitive::setCoeff(const Vector3f& coeff) {setCoeff138,3480
+void Primitive::setCoeff(const float x, const float y, const float z) {setCoeff141,3557
+void Primitive::setExponents(const float exp0, const float exp1) {setExponents144,3659
+void Primitive::setPatch(setPatch148,3774
+void Primitive::setColor(const RGBf& color) {setColor155,3926
+void Primitive::setColor(const float r, const float g, const float b) {setColor158,3999
+void Primitive::setAmbient(const float ambient) {setAmbient163,4142
+void Primitive::setReflected(const float reflected) {setReflected166,4223
+void Primitive::setRefracted(const float refracted) {setRefracted169,4312
+void Primitive::setGloss(const float gloss) {setGloss172,4401
+void Primitive::setDiffuse(const float diffuse) {setDiffuse175,4474
+void Primitive::setSpecular(const float specular) {setSpecular178,4555
+const Vector3f& Primitive::getCoeff() const {getCoeff183,4676
+const float Primitive::getExp0() const {getExp0186,4748
+const float Primitive::getExp1() const {getExp1189,4814
+const unsigned int Primitive::getPatchX() const {getPatchX192,4880
+const unsigned int Primitive::getPatchY() const {getPatchY195,4958
+const RGBf& Primitive::getColor() const {getColor198,5036
+float Primitive::getAmbient() const {getAmbient201,5104
+float Primitive::getReflected() const {getReflected204,5170
+float Primitive::getRefracted() const {getRefracted207,5240
+float Primitive::getGloss() const {getGloss210,5310
+float Primitive::getDiffuse() const {getDiffuse213,5372
+float Primitive::getSpecular() const {getSpecular216,5438
+const Vector3f Primitive::getVertex(float u, float v) {getVertex224,5602
+const Vector3f Primitive::getNormal(const Vector3f& vertex) {getNormal235,5983
+Child::Child() : name("default child"), transformations() {Child262,6973
+Child::Child(const Name& name) : name(name), transformations() {Child266,7119
+Object::Object() :Object270,7188
+Object::~Object() {~Object280,7320
+bool Object::aliasExists(const Name& name) {aliasExists314,8187
+void Object::overallTranslate(const float x, const float y, const float z) {overallTranslate319,8327
+void Object::overallRotate(overallRotate322,8478
+void Object::overallScale(const float x, const float y, const float z) {overallScale334,8770
+const vector<Transformation>& Object::getOverallTransformation() const {getOverallTransformation338,8918
+void Object::addChild(const Name& name, const Name& alias) {addChild342,9028
+const unordered_map<Name, Child, NameHasher>& Object::getChildren() constgetChildren352,9345
+void Object::setCursor(const Name& alias) {setCursor358,9480
+const Name& Object::getCursor() const {getCursor367,9751
+bool Object::validateCursor() {validateCursor371,9819
+void Object::cursorTranslate(const float x, const float y, const float z) {cursorTranslate379,10092
+void Object::cursorRotate(cursorRotate385,10322
+void Object::cursorScale(const float x, const float y, const float z) {cursorScale399,10696
+void printSceneInfo(int indent) {printSceneInfo408,11005
+void printInfo(const Renderable* ren, int indent) {printInfo447,12153
+void printInfo(const RGBf& color, int indent) {printInfo539,15904
+void printInfo(const vector<Transformation>& trans, int indent) {printInfo544,16040
+
+model.hpp,3235
+#define MODEL_HPPMODEL_HPP2,18
+inline int sign(float x) {sign18,250
+inline float pSin(float u, float p) {pSin23,366
+inline float pCos(float u, float p) {pCos29,540
+struct RGBf {RGBf35,665
+    float r;r36,679
+    float g;g37,692
+    float b;b38,705
+enum TransformationType {TRANS, SCALE, ROTATE};TransformationType45,868
+enum TransformationType {TRANS, SCALE, ROTATE};TRANS45,868
+enum TransformationType {TRANS, SCALE, ROTATE};SCALE45,868
+enum TransformationType {TRANS, SCALE, ROTATE};ROTATE45,868
+struct Transformation {Transformation46,916
+    TransformationType type;type47,940
+    Vector4f trans;trans48,969
+static const unsigned int name_buffer_size = 64;name_buffer_size61,1397
+struct Name {Name62,1446
+    char name[name_buffer_size];name68,1525
+struct NameHasher {NameHasher75,1691
+    unsigned int operator()(const Name& name) const {operator ()76,1711
+enum RenderableType {PRM, OBJ, MSH};RenderableType87,1975
+enum RenderableType {PRM, OBJ, MSH};PRM87,1975
+enum RenderableType {PRM, OBJ, MSH};OBJ87,1975
+enum RenderableType {PRM, OBJ, MSH};MSH87,1975
+inline const char* toCstr(RenderableType type) {toCstr88,2012
+class Renderable {Renderable102,2343
+    static unordered_map<Name, Renderable*, NameHasher> renderables;renderables104,2371
+static const float default_coeff_x = 1.0;default_coeff_x124,2974
+static const float default_coeff_y = 1.0;default_coeff_y125,3016
+static const float default_coeff_z = 1.0;default_coeff_z126,3058
+static const float default_exp0 = 1.0;default_exp0127,3100
+static const float default_exp1 = 1.0;default_exp1128,3139
+static const unsigned int default_patch_x = 15;default_patch_x129,3178
+static const unsigned int default_patch_y = 15;default_patch_y130,3226
+static const float default_ambient = 0.1;default_ambient131,3274
+static const float default_reflected = 0.3;default_reflected132,3316
+static const float default_refracted = 0.5;default_refracted133,3360
+static const float default_gloss = 0.3;default_gloss134,3404
+static const float default_diffuse = 0.8;default_diffuse135,3444
+static const float default_specular = 0.1;default_specular136,3486
+class Primitive : public Renderable {Primitive137,3529
+    Vector3f coeff;coeff140,3596
+    float exp0;exp0142,3633
+    float exp1;exp1143,3649
+    unsigned int patch_x;patch_x145,3684
+    unsigned int patch_y;patch_y146,3710
+    RGBf color;color148,3750
+    float ambient;ambient149,3766
+    float reflected;reflected150,3785
+    float refracted;refracted151,3806
+    float gloss;gloss152,3827
+    float diffuse;diffuse153,3844
+    float specular;specular154,3863
+    const RenderableType getType() const {getType160,3937
+struct Child {Child196,5198
+    Name name;name197,5213
+    vector<Transformation> transformations;transformations198,5228
+class Object : public Renderable {Object206,5420
+    vector<Transformation> transformations;transformations211,5516
+    unordered_map<Name, Child, NameHasher> children;    // FIX HERE typedef this stuffchildren214,5601
+    Name cursor;cursor220,5861
+    const RenderableType getType() const {getType226,5926
+inline void printIndent(int indent) {printIndent268,7172
