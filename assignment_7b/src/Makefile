@@ -15,6 +15,7 @@ all: $(EXENAME)
 
 $(EXENAME): $(SOURCES)
 	$(CC) $(FLAGS) -o $(EXENAME) $(INCLUDE) $(LDFLAGS) $(SOURCES) $(LDLIBS)
+	ctags -Re *
 
 %.o: %.cpp %.hpp
 	$(CC) $(FLAGS) -o $@ $(LIBDIR) $(INCLUDE) $(LDFLAGS) -c $< $(LDLIBS)
