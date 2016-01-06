@@ -75,21 +75,6 @@ Matrix<double, 4, 4> tfmvec2mat(const vector<Transformation>& tfmvec) {
   return mat;
 }
 
-/** Take a vector of transforms and create a transformation matrix
- *   that does not factor in translations 
- **/
-Matrix<double, 4, 4> tfmvec2mat_wo_tl(const vector<Transformation>& tfmvec) {
-  Matrix<double, 4, 4> mat;
-  mat.setIdentity();
-  for (auto it = tfmvec.cbegin(); it != tfmvec.cend(); ++it) {
-    auto tmp = mat;
-    if (it->type != TRANS) {
-      mat = tfm2mat(*it) * tmp;
-    }
-  }
-  return mat;
-}
-
 /** Superquadric inside-outside test
  *  < 0 -> inside object
  *  = 0 -> on object's surface

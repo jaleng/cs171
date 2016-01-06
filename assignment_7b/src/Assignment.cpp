@@ -76,21 +76,6 @@ Matrix<double, 4, 4> tfmvec2mat(const vector<Transformation>& tfmvec) {
   return mat;
 }
 
-/** Take a vector of transforms and create a transformation matrix
- *   that does not factor in translations 
- **/
-Matrix<double, 4, 4> tfmvec2mat_wo_tl(const vector<Transformation>& tfmvec) {
-  Matrix<double, 4, 4> mat;
-  mat.setIdentity();
-  for (auto it = tfmvec.cbegin(); it != tfmvec.cend(); ++it) {
-    auto tmp = mat;
-    if (it->type != TRANS) {
-      mat = tfm2mat(*it) * tmp;
-    }
-  }
-  return mat;
-}
-
 /** Superquadric inside-outside test
  *  < 0 -> inside object
  *  = 0 -> on object's surface
@@ -185,7 +170,7 @@ unique_ptr<vector<PAT>> getPATs(const Scene& scene) {
     if (obj_p != nullptr) {
       auto built = buildPATs(dynamic_cast<const Renderable&>(*obj_p));
       if (built.get() == nullptr) {
-        cout << "JG: built is a nullptr\n";
+        assert(false);  // built is a nullptr
       }
       for (const auto& pat : *built) {
         pats->push_back(pat);
@@ -345,32 +330,19 @@ void printMatrix(MatrixXd m, std::string msg = "") {
   }
 }
 
-bool isShaded(const PointLight& light, Vector3d lit_pos, const Primitive& prm, vector<PAT> pats) {
-  // DEBUG
-  //return false;
-  // ENDEBUG
+bool isShaded(const PointLight& light,
+              Vector3d lit_pos,
+              const Primitive& prm,
+              vector<PAT> pats) {
   Vector3d light_position(light.position[0]/light.position[3],
                           light.position[1]/light.position[3],
                           light.position[2]/light.position[3]);
-  // DEBUG -- seems good
-  //printMatrix(light_position, "light_position:\n");
-  // ENDEBUG
   Vector3d dir = lit_pos - light_position;
   dir.normalize();
   Vector3d intersection;
   auto closest_pat = get_closest_PAT_thru_ray(pats, dir, light_position, nullptr, &intersection);
   auto intersection_distance = (intersection - lit_pos).norm();
-  // DEBUG
-  //if (closest_pat == nullptr) {
-  //  std::cout << "closest_pat is nullptr.\n";
-  //} else {
-  //  
-  //}
-  // ENDEBUG
   if (closest_pat != nullptr && intersection_distance < 0.0001) {
-    // DEBUG
-    // std::cout << "Not shaded \n";
-    // ENDEBUG
     return false;
   }
   return true;
@@ -400,14 +372,8 @@ Vector3d lighting(Vector3d lit_pos, Vector3d normal,
     }
     Vector3d light_color(light.color[0], light.color[1], light.color[2]);
     // Attentuate the light_color
-    // DEBUG - Turned off attenuation
     auto distance = static_cast<double>((lit_pos - cam_pos).norm());
     auto attenuation = (1.0 / (1 + (light.k * distance * distance)));
-    // DEBUG
-    //std::cout << "attenuation: " << attenuation << "\n";
-    //std::cout << "attenuation k: " << light.k << "\n";
-
-    // ENDEBUG
     light_color *= attenuation;
 
     Vector3d light_position(light.position[0]/light.position[3],
@@ -417,7 +383,6 @@ Vector3d lighting(Vector3d lit_pos, Vector3d normal,
 
     // Get diffuse light
     double dot_product = normal.dot(light_direction);
-    //std::cout << "dot_product: " << dot_product << "\n";
     auto light_diffuse = light_color * max(0.0, dot_product);
     diffuse_sum += light_diffuse;
 
@@ -432,12 +397,6 @@ Vector3d lighting(Vector3d lit_pos, Vector3d normal,
   auto total_color = Vector3d::Ones().cwiseMin(ambient
                                    + diffuse_sum.cwiseProduct(diffuse)
                                    + specular_sum.cwiseProduct(specular));
-  // DEBUG
-  //printMatrix(ambient, "ambient:\n");
-  //printMatrix(diffuse_sum, "diffuse_sum:\n");
-  //printMatrix(specular_sum, "specular_sum:\n");
-  //printMatrix(total_color, "total_color:\n");
-  // ENDEBUG
   return total_color;
 }
 
@@ -521,15 +480,11 @@ PAT* get_closest_PAT_thru_ray(vector<PAT>& pats, Vector3d A, Vector3d B, double 
 
 /* Ray traces the scene. */
 void Assignment::raytrace(Camera camera, Scene scene) {
-  // LEAVE THIS UNLESS YOU WANT TO WRITE YOUR OWN OUTPUT FUNCTION
   PNGMaker png = PNGMaker(XRES, YRES);
 
-  // REPLACE THIS WITH YOUR CODE
   std::cout << "Starting raytracing...\n";
   // Get pats
-  //cout << "JG: Before call to getPATs\n";
   auto pats = getPATs(scene);
-  //cout << "JG: After call to getPATs\n";
   auto camera_position = getCameraPosition(camera);
 
   for (int i = 0; i < XRES; i++) {
@@ -565,9 +520,6 @@ void Assignment::raytrace(Camera camera, Scene scene) {
                                                 pat_transform_and_scale_matrix);
         normal_world.normalize();
 
-        // DEBUG
-        //printMatrix(normal_world, "Normal:\n");
-        // ENDEBUG
         Vector3d intersection_point = transform(intersection_transformed,
                                                 pat_transform_and_scale_matrix);
 
@@ -581,12 +533,9 @@ void Assignment::raytrace(Camera camera, Scene scene) {
       } else {
         png.setPixel(i, j, 0, 0, 0);
       }
-      // EXAMPLE HOW TO USE PNG
-      // png.setPixel(i, j, 1.0, 1.0, 1.0);
     }
   }
 
-  // LEAVE THIS UNLESS YOU WANT TO WRITE YOUR OWN OUTPUT FUNCTION
   if (png.saveImage())
     printf("Error: couldn't save PNG image\n");
   cout << "...finished raytracing()\n";
